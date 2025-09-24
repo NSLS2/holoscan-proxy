@@ -12,7 +12,7 @@ std::queue<zmq::message_t> messages;
 void receive(zmq::context_t& context)
 {
     zmq::socket_t receiver(context, ZMQ_PULL);
-    receiver.bind("some ip addr");
+    receiver.bind("tcp://localhost:5555");
 
     while (true)
     {
@@ -21,6 +21,10 @@ void receive(zmq::context_t& context)
        
         {   //lock the mutex until pushind the new message to the queue
             std::lock_guard<std::mutex> lock(buffer_mutex);
+            
+            std::string recv_msg((char*)msg.data(), msg.size());
+            std::cerr<<"Received: "<< recv_msg<<std::endl;
+            
             messages.emplace(std::move(msg)); // zmq::message_t does not have copy constructor?
         } //unlock mutex in the end of the scope
         cv.notify_one();
@@ -35,8 +39,8 @@ void distribute(zmq::context_t& context)
     zmq::socket_t sender1(context, ZMQ_PUSH);
     zmq::socket_t sender2(context, ZMQ_PUSH);
 
-    sender1.connect("some ip address");
-    sender2.connect("some ip address");
+    sender1.connect("tcp://localhost:6001");
+    sender2.connect("tcp://localhost:6002");
 
     while(true)
     {   
@@ -66,7 +70,8 @@ int main()
     std::thread th1(receive, std::ref(context));
     std::thread th2(distribute, std::ref(context));
 
-    th1.join(); th2.join();
+    th1.join(); 
+    th2.join();
  
     return 0;
 }

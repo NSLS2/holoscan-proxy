@@ -15,6 +15,7 @@ lib/
 *.exp
 *.lib
 *.manifest
+*.sh
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt

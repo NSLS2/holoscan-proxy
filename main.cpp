@@ -2,18 +2,46 @@
 #include<thread>
 #include<mutex>
 #include<condition_variable>
+#include<yaml-cpp/yaml.h>
+#include <ranges>
 #include<iostream>
 
+struct Node 
+{
+    std::string ip_addr;
+    int port;
+};
+
+const char* server_pub;
+const char* server_sec;
 
 std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> messages;
 
-void receive(zmq::context_t& context)
+
+
+std::vector<Node> extract_ip()
+{
+    YAML::Node config = YAML::LoadFile("config.yaml");
+    std::vector<Node> nodes;
+    
+    for (const auto& node : config["nodes"])
+    {
+        nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
+    }
+
+    for (const auto& node : nodes)
+    std::cout<<node.ip_addr<<" "<<node.port<<std::endl;
+
+    return nodes;
+}
+
+void receive(zmq::context_t& context, const std::vector<Node>& nodes)
 {
     zmq::socket_t receiver(context, ZMQ_PULL);
-    receiver.bind("tcp://localhost:5555");
-
+    receiver.bind("tcp://" + nodes[0].ip_addr + ":" + std::to_string(nodes[0].port));
+    
     while (true)
     {
         zmq::message_t msg;
@@ -33,14 +61,20 @@ void receive(zmq::context_t& context)
 
 }
 
-void distribute(zmq::context_t& context)
+void distribute(zmq::context_t& context, const std::vector<Node>& nodes)
 {
     //create sockets to send the message through this proxy
-    zmq::socket_t sender1(context, ZMQ_PUSH);
-    zmq::socket_t sender2(context, ZMQ_PUSH);
+    std::vector<zmq::socket_t> senders;
+    for (const auto& node : nodes | std::views::drop(1))
+    {
+        zmq::socket_t sender(context, ZMQ_PUSH);
+        sender.set(zmq::sockopt::curve_server, 1);
+        sender.set(zmq::sockopt::curve_publickey, server_pub);
+        sender.set(zmq::sockopt::curve_secretkey, server_sec);
 
-    sender1.connect("tcp://localhost:6001");
-    sender2.connect("tcp://localhost:6002");
+        sender.connect("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
+        senders.push_back(std::move(sender));
+    }
 
     while(true)
     {   
@@ -54,11 +88,12 @@ void distribute(zmq::context_t& context)
         lock.unlock(); // unlock the mutex so that the reader can continue working
       
         // sending message to socket might modify ownership? so just copy it into another instance 
-        zmq::message_t msg_copy;
-        msg_copy.copy(msg); 
-       
-        sender1.send(msg, zmq::send_flags::none);
-        sender2.send(msg_copy, zmq::send_flags::none);
+        for (auto& sender : senders)
+        { 
+            zmq::message_t msg_copy;
+            msg_copy.copy(msg); 
+            sender.send(msg_copy, zmq::send_flags::none);
+        }
        
     }
 
@@ -66,9 +101,16 @@ void distribute(zmq::context_t& context)
 
 int main()
 {
+    server_pub = std::getenv("SERVER_PUBLIC_KEY");
+    server_sec = std::getenv("SERVER_SECRET_KEY");
+    std::cout<<"public key: "<<server_pub<<std::endl;
+    std::cout<<"private key: "<<server_pub<<std::endl;
+
+    std::vector<Node> nodes = extract_ip();
+
     zmq::context_t context(1); //1 IO thread
-    std::thread th1(receive, std::ref(context));
-    std::thread th2(distribute, std::ref(context));
+    std::thread th1(receive, std::ref(context), std::cref(nodes));
+    std::thread th2(distribute, std::ref(context), std::cref(nodes));
 
     th1.join(); 
     th2.join();

@@ -31,16 +31,13 @@ std::vector<Node> extract_ip()
         nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
     }
 
-    for (const auto& node : nodes)
-    std::cout<<node.ip_addr<<" "<<node.port<<std::endl;
-
     return nodes;
 }
 
 void receive(zmq::context_t& context, const std::vector<Node>& nodes)
 {
     zmq::socket_t receiver(context, ZMQ_PULL);
-    receiver.bind("tcp://" + nodes[0].ip_addr + ":" + std::to_string(nodes[0].port));
+    receiver.connect("tcp://" + nodes[0].ip_addr + ":" + std::to_string(nodes[0].port));
     
     while (true)
     {
@@ -67,12 +64,13 @@ void distribute(zmq::context_t& context, const std::vector<Node>& nodes)
     std::vector<zmq::socket_t> senders;
     for (const auto& node : nodes | std::views::drop(1))
     {
-        zmq::socket_t sender(context, ZMQ_PUSH);
+        //zmq::socket_t sender(context, ZMQ_PUSH);
+        zmq::socket_t sender(context, ZMQ_PUB);
         sender.set(zmq::sockopt::curve_server, 1);
         sender.set(zmq::sockopt::curve_publickey, server_pub);
         sender.set(zmq::sockopt::curve_secretkey, server_sec);
 
-        sender.connect("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
+        sender.bind("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
         senders.push_back(std::move(sender));
     }
 
@@ -103,8 +101,6 @@ int main()
 {
     server_pub = std::getenv("SERVER_PUBLIC_KEY");
     server_sec = std::getenv("SERVER_SECRET_KEY");
-    std::cout<<"public key: "<<server_pub<<std::endl;
-    std::cout<<"private key: "<<server_pub<<std::endl;
 
     std::vector<Node> nodes = extract_ip();
 

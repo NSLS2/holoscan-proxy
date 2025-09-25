@@ -3,7 +3,7 @@ import time
 
 context = zmq.Context()
 socket = context.socket(zmq.PUSH)
-socket.connect("tcp://localhost:5555")
+socket.bind("tcp://localhost:5555")
 
 while True:
     msg = f"Test message at {time.time()}\n"

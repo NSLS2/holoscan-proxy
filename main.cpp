@@ -39,23 +39,34 @@ void receive(zmq::context_t& context, const std::vector<Node>& nodes)
     zmq::socket_t receiver(context, ZMQ_PULL);
     receiver.connect("tcp://" + nodes[0].ip_addr + ":" + std::to_string(nodes[0].port));
     
+    zmq::pollitem_t items[] = { 
+        { static_cast<void*>(receiver), 0, ZMQ_POLLIN, 0 } 
+    };
+
     while (true)
     {
-        zmq::message_t msg;
-        receiver.recv(msg, zmq::recv_flags::none);
+        zmq::poll(items, 1, std::chrono::milliseconds(5000));
+        if (items[0].revents & ZMQ_POLLIN)
+        {
+            zmq::message_t msg;
+            receiver.recv(msg, zmq::recv_flags::none);
        
-        {   //lock the mutex until pushind the new message to the queue
-            std::lock_guard<std::mutex> lock(buffer_mutex);
+            {   //lock the mutex until pushind the new message to the queue
+                std::lock_guard<std::mutex> lock(buffer_mutex);
             
-            std::string recv_msg((char*)msg.data(), msg.size());
-            std::cerr<<"Received: "<< recv_msg<<std::endl;
+                std::string recv_msg((char*)msg.data(), msg.size());
+                std::cerr<<"Received: "<< recv_msg<<std::endl;
             
-            messages.emplace(std::move(msg)); // zmq::message_t does not have copy constructor?
-        } //unlock mutex in the end of the scope
-        cv.notify_one();
+                messages.emplace(std::move(msg)); // zmq::message_t does not have copy constructor?
+            } //unlock mutex in the end of the scope
+            cv.notify_one();
 
+        }
+        else
+        {
+            std::cerr<<"No message in 5 seconds!"<<std::endl;
+        }
     }
-
 }
 
 void distribute(zmq::context_t& context, const std::vector<Node>& nodes)

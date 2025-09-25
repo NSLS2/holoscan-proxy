@@ -11,15 +11,15 @@ client_sec = os.environ["CLIENT1_SECRET_KEY"].encode('ascii')
 
 
 context = zmq.Context()
-socket = context.socket(zmq.SUB)
-#socket = context.socket(zmq.PULL)
+#socket = context.socket(zmq.SUB)
+socket = context.socket(zmq.PULL)
 
 #socket.setsockopt(zmq.CURVE_SERVER, True)
 socket.setsockopt(zmq.CURVE_PUBLICKEY, client_pub)
 socket.setsockopt(zmq.CURVE_SECRETKEY, client_sec)
 socket.setsockopt(zmq.CURVE_SERVERKEY, server_pub)
 
-socket.setsockopt(zmq.SUBSCRIBE, b"")
+#socket.setsockopt(zmq.SUBSCRIBE, b"")
 socket.connect("tcp://localhost:6001")
 
 while True:

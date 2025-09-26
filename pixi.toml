@@ -1,0 +1,34 @@
+[workspace]
+authors = ["skarakuzu <karakuzu.seher@gmail.com>"]
+channels = ["conda-forge"]
+name = "holoscan-proxy"
+platforms = ["osx-64"]
+version = "0.1.0"
+
+[tasks]
+receiver ={ cmd="python receiver.py {{address}}", args=["address"]}
+sender = "python sender.py"
+
+[feature.receiver1.activation]
+scripts = ["receiver_1_env.sh"]
+
+[feature.receiver2.activation]
+scripts = ["receiver_2_env.sh"]
+
+[environments]
+receiver1 = ["receiver1"]
+receiver2 = ["receiver2"]
+
+# Task that depends on other tasks in different environments
+[tasks.receiver1]
+depends-on = [
+  { task = "receiver", environment = "receiver1", args = [{"address"= "tcp://127.0.0.1:6001"}]}
+]
+
+[tasks.receiver2]
+depends-on = [
+  { task = "receiver", environment = "receiver2" , args = [{"address"= "tcp://127.0.0.1:6002"}]}
+]
+
+[dependencies]
+pyzmq = ">=27.1.0,<28"

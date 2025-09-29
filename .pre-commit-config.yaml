@@ -1,5 +1,16 @@
+#repos:
+#  - repo: https://github.com/pre-commit/pre-commit-hooks
+#    rev: v4.6.0 # Use a recent stable version
+#    hooks:
+#      - id: check-yaml
 repos:
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v17.0.6
     hooks:
       - id: clang-format
+#repos:
+#  - repo: https://github.com/pocc/pre-commit-hooks
+#    rev: master # Or a specific tag/commit hash
+#    hooks:
+#      - id: clang-tidy
+#      - id: cppcheck

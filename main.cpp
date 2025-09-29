@@ -81,7 +81,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     cv.wait(lock, [] { return !messages.empty(); });
 
     // get the message from the buffer queue and pop the buffer queue
-    zmq::message_t msg = std::move(messages.front()); // zmq::message_t does not have copy constructor?
+    zmq::message_t msg = std::move(
+        messages.front()); // zmq::message_t does not have copy constructor?
     messages.pop();
     lock.unlock(); // unlock the mutex so that the reader can continue working
 

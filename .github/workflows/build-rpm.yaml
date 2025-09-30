@@ -45,7 +45,7 @@ jobs:
         mv $ARCHIVE ~/rpmbuild/SOURCES/
 
     - name: Build RPM package
-      run: rpmbuild -ba ~/rpmbuild/SPECS/holoscan-proxy.spec # Build the RPM
+      run: rpmbuild -ba --nodeps ~/rpmbuild/SPECS/holoscan-proxy.spec # Build the RPM
 
     - name: Upload RPM artifact
       uses: actions/upload-artifact@v4

@@ -30,11 +30,19 @@ jobs:
     - name: Check for .git
       run: ls -la . | grep .git || echo ".git is missing!"
 
-    - name: Create source tarball with git archive
+    - name: Create source tarball from git
       run: |
         VERSION=0.0.0
-        git archive --format=tar.gz --prefix=holoscan-proxy-${VERSION}/ HEAD > ~/rpmbuild/SOURCES/holoscan-proxy-${VERSION}.tar.gz
-        mv holoscan-proxy-${VERSION}.tar.gz ~/rpmbuild/SOURCES/
+        ARCHIVE=holoscan-proxy-${VERSION}.tar.gz
+        echo "Creating $ARCHIVE..."
+        git archive --format=tar.gz --prefix=holoscan-proxy-${VERSION}/ HEAD -o $ARCHIVE
+
+        if [ ! -f "$ARCHIVE" ]; then
+          echo "❌ Error: Tarball not created."
+          exit 1
+        fi
+
+        mv $ARCHIVE ~/rpmbuild/SOURCES/
 
     - name: Build RPM package
       run: rpmbuild -ba ~/rpmbuild/SPECS/holoscan-proxy.spec # Build the RPM

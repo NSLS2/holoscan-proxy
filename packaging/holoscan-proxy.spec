@@ -39,5 +39,5 @@ make install DESTDIR=%{buildroot}
 /usr/bin/holoscan-proxy
 
 %changelog
-* Tue Sep 30 Seher Karakuzu <karakuzu.seher@gmail.com> - %{version}-%{release}
+* Tue Sep 30 2025 Seher Karakuzu <karakuzu.seher@gmail.com> - %{version}-%{release}
 - Initial RPM release

@@ -27,6 +27,9 @@ jobs:
         # Copy source files to ~/rpmbuild/SOURCES if needed
         # For example: cp your-source-code.tar.gz ~/rpmbuild/SOURCES/
 
+    - name: Check for .git
+      runs: ls -la . | grep .git || echo ".git is missing!"
+
     - name: Create source tarball with git archive
       run: |
         VERSION=0.0.0

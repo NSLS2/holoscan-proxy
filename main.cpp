@@ -1,3 +1,4 @@
+#include <any>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -21,13 +22,16 @@ std::queue<zmq::message_t> messages;
 // connect(), bind() functions return void or throw exception
 // send(), recv() functions return bool or sometimes throw exception
 template <typename Func>
-void LOG_SOCKOUT_VOID(const std::string &operation, const std::string &url,
+// void LOG_SOCKOUT_VOID(const std::string &operation, const std::string &url,
+//                       Func &&func) {
+void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
                       Func &&func) {
   try {
     func(url);
   } catch (const zmq::error_t &e) {
     std::cerr << "Error!! Could not perform the " << operation << " with the "
-              << url << ". Error notes: " << e.what() << " err no: " << e.num()
+              << std::any_cast<std::string>(url)
+              << ". Error notes: " << e.what() << " err no: " << e.num()
               << std::endl;
   }
 }
@@ -60,10 +64,10 @@ std::vector<Node> extract_ip() {
 void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
   zmq::socket_t receiver(context, ZMQ_PULL);
 
-  std::string url =
-      "tcp://" + nodes[0].ip_addr + ":" + std::to_string(nodes[0].port);
-  LOG_SOCKOUT_VOID("connect", url, [&](const std::string &url) {
-    return receiver.connect(url);
+  std::any url = std::string("tcp://" + nodes[0].ip_addr + ":" +
+                             std::to_string(nodes[0].port));
+  LOG_SOCKOUT_VOID("connect", url, [&](const std::any &url) {
+    return receiver.connect(std::any_cast<std::string>(url));
   });
 
   zmq::pollitem_t items[] = {{static_cast<void *>(receiver), 0, ZMQ_POLLIN, 0}};
@@ -97,13 +101,29 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   for (const auto &node : nodes | std::views::drop(1)) {
     // zmq::socket_t sender(context, ZMQ_PUSH);
     zmq::socket_t sender(context, ZMQ_PUSH);
-    sender.set(zmq::sockopt::curve_server, 1);
-    sender.set(zmq::sockopt::curve_publickey, server_pub);
-    sender.set(zmq::sockopt::curve_secretkey, server_sec);
+    LOG_SOCKOUT_VOID(
+        "set", zmq::sockopt::curve_server, [&](const std::any &option) {
+          return sender.set(std::any_cast<zmq::sockopt::curve_server_t>(option),
+                            1);
+        });
+    LOG_SOCKOUT_VOID(
+        "set", zmq::sockopt::curve_publickey, [&](const std::any &option) {
+          return sender.set(
+              std::any_cast<zmq::sockopt::curve_publickey_t>(option),
+              server_pub);
+        });
+    LOG_SOCKOUT_VOID(
+        "set", zmq::sockopt::curve_secretkey, [&](const std::any &option) {
+          return sender.set(
+              std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
+              server_sec);
+        });
 
-    std::string url = "tcp://" + node.ip_addr + ":" + std::to_string(node.port);
-    LOG_SOCKOUT_VOID("bind", url,
-                     [&](const std::string &url) { return sender.bind(url); });
+    std::any url =
+        std::string("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
+    LOG_SOCKOUT_VOID("bind", url, [&](const std::any &url) {
+      return sender.bind(std::any_cast<std::string>(url));
+    });
     senders.push_back(std::move(sender));
   }
 

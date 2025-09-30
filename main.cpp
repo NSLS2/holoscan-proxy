@@ -18,7 +18,31 @@ std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> messages;
 
-void LOG_SOCKOUT(zmq::socket_t &socket, zmq::message_t &msg) {}
+// connect(), bind() functions return void or throw exception
+// send(), recv() functions return bool or sometimes throw exception
+template <typename Func>
+void LOG_SOCKOUT_VOID(const std::string &operation, Func &&func) {
+  try {
+    func();
+  } catch (const zmq::error_t &e) {
+    std::cerr << "Error " << operation << e.what() << " err no: " << e.num()
+              << std::endl;
+  }
+}
+
+template <typename Func>
+bool LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
+  try {
+    bool result = func();
+    if (!result) {
+      std::cerr << "Warning " << operation << "failed\n";
+    }
+    return result;
+  } catch (const zmq::error_t &e) {
+    std::cerr << "Error " << operation << e.what() << " err no: " << e.num()
+              << std::endl;
+  }
+}
 
 std::vector<Node> extract_ip() {
   YAML::Node config = YAML::LoadFile("config.yaml");
@@ -33,8 +57,11 @@ std::vector<Node> extract_ip() {
 
 void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
   zmq::socket_t receiver(context, ZMQ_PULL);
-  receiver.connect("tcp://" + nodes[0].ip_addr + ":" +
-                   std::to_string(nodes[0].port));
+
+  LOG_SOCKOUT_VOID("connect", [&] {
+    return receiver.connect("tcp://" + nodes[0].ip_addr + ":" +
+                            std::to_string(nodes[0].port));
+  });
 
   zmq::pollitem_t items[] = {{static_cast<void *>(receiver), 0, ZMQ_POLLIN, 0}};
 

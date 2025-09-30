@@ -10,8 +10,8 @@ Source0:        holoscan-proxy-%{version}.tar.gz
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  make
-BuildRequires:  cppzmq-devel
-BuildRequires:  yaml-cpp-devel
+BuildRequires:  cppzmq
+BuildRequires:  yaml-cpp
 
 Requires:       cppzmq
 Requires:       yaml-cpp
@@ -38,6 +38,6 @@ make install DESTDIR=%{buildroot}
 %doc README.md
 /usr/bin/holoscan-proxy
 
-%changelog
-* $(date +"%a %b %d %Y") Your Name <you@example.com> - %{version}-%{release}
-- Initial RPM release
+#%changelog
+#* $(date +"%a %b %d %Y") Your Name <you@example.com> - %{version}-%{release}
+#- Initial RPM release

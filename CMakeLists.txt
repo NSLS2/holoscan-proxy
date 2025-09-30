@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(main)
+project(holoscan-proxy)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,8 +27,7 @@ endif()
 
 
 set(SOURCE_FILES main.cpp)
-add_executable(main ${SOURCE_FILES})
+add_executable(holoscan-proxy ${SOURCE_FILES})
 
-target_include_directories(main PUBLIC ${ZeroMQ_INCLUDE_DIR} ${YAML_CPP_INCLUDE_DIR})
-target_link_libraries(main PRIVATE yaml-cpp::yaml-cpp ${ZeroMQ_LIBRARY})
-#target_link_libraries(main ${ZeroMQ_LIBRARY} yaml-cpp)
+target_include_directories(holoscan-proxy PUBLIC ${ZeroMQ_INCLUDE_DIR} ${YAML_CPP_INCLUDE_DIR})
+target_link_libraries(holoscan-proxy PRIVATE yaml-cpp::yaml-cpp ${ZeroMQ_LIBRARY})

@@ -19,11 +19,9 @@ std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> messages;
 
-// connect(), bind() functions return void or throw exception
+// connect(), bind(), set() functions return void or throw exception
 // send(), recv() functions return bool or sometimes throw exception
 template <typename Func>
-// void LOG_SOCKOUT_VOID(const std::string &operation, const std::string &url,
-//                       Func &&func) {
 void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
                       Func &&func) {
   try {

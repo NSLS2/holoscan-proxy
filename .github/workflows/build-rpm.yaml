@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     # This assumes your self-hosted runner is a RHEL 9 machine with required build tools installed
 
     steps:

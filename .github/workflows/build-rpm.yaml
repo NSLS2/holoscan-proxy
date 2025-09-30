@@ -28,7 +28,7 @@ jobs:
         # For example: cp your-source-code.tar.gz ~/rpmbuild/SOURCES/
 
     - name: Check for .git
-      runs: ls -la . | grep .git || echo ".git is missing!"
+      run: ls -la . | grep .git || echo ".git is missing!"
 
     - name: Create source tarball with git archive
       run: |

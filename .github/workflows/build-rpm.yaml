@@ -1,37 +1,54 @@
-name: Build RPM Package
+name: Build RPM for holoscan-proxy
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     container:
-      image: fedora:38
+      image: fedora:39
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
-          dnf install -y rpm-build cmake gcc-c++ make cppzmq-devel yaml-cpp-devel
+          dnf install -y \
+            rpm-build \
+            rpmdevtools \
+            git \
+            cmake \
+            gcc-c++ \
+            make \
+            cppzmq-devel \
+            yaml-cpp-devel
 
-      - name: Prepare rpmbuild directories
-        run: mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-
-      - name: Create source tarball
+      - name: Prepare rpmbuild structure
         run: |
-          tar czf ~/rpmbuild/SOURCES/holoscan-proxy-0.0.0.tar.gz --exclude='.git' .
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          echo '%_topdir %(echo $HOME)/rpmbuild' > ~/.rpmmacros
+
+      - name: Create source tarball with git archive
+        run: |
+          VERSION=0.0.0
+          git archive --format=tar.gz --prefix=holoscan-proxy-${VERSION}/ HEAD > ~/rpmbuild/SOURCES/holoscan-proxy-${VERSION}.tar.gz
 
       - name: Copy spec file
-        run: cp packaging/holoscan-proxy.spec ~/rpmbuild/SPECS/
+        run: |
+          cp packaging/holoscan-proxy.spec ~/rpmbuild/SPECS/
 
       - name: Build RPM
-        run: rpmbuild -ba ~/rpmbuild/SPECS/holoscan-proxy.spec
+        run: |
+          rpmbuild -ba ~/rpmbuild/SPECS/holoscan-proxy.spec
 
-      - name: Upload RPM artifact
+      - name: Upload built RPMs
         uses: actions/upload-artifact@v4
         with:
-          name: holoscan-proxy-rpm
-          path: ~/rpmbuild/RPMS/x86_64/*.rpm
+          name: holoscan-proxy-rpms
+          path: ~/rpmbuild/RPMS/**/*.rpm

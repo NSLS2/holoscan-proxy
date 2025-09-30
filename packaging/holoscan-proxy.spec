@@ -38,6 +38,6 @@ make install DESTDIR=%{buildroot}
 %doc README.md
 /usr/bin/holoscan-proxy
 
-#%changelog
-#* $(date +"%a %b %d %Y") Your Name <you@example.com> - %{version}-%{release}
-#- Initial RPM release
+%changelog
+* $(date +"%a %b %d %Y") Seher Karakuzu <karakuzu.seher@gmail.com> - %{version}-%{release}
+- Initial RPM release

@@ -3,7 +3,7 @@ Version:        0.0.0
 Release:        1%{?dist}
 Summary:        Holoscan Proxy - C++ app using ZeroMQ and YAML
 
-#License:        MIT
+License:        BSD-3
 URL:            https://github.com/yourusername/holoscan-proxy
 Source0:        holoscan-proxy-%{version}.tar.gz
 

@@ -21,11 +21,13 @@ std::queue<zmq::message_t> messages;
 // connect(), bind() functions return void or throw exception
 // send(), recv() functions return bool or sometimes throw exception
 template <typename Func>
-void LOG_SOCKOUT_VOID(const std::string &operation, Func &&func) {
+void LOG_SOCKOUT_VOID(const std::string &operation, const std::string &url,
+                      Func &&func) {
   try {
-    func();
+    func(url);
   } catch (const zmq::error_t &e) {
-    std::cerr << "Error " << operation << e.what() << " err no: " << e.num()
+    std::cerr << "Error!! Could not perform the " << operation << " with the "
+              << url << ". Error notes: " << e.what() << " err no: " << e.num()
               << std::endl;
   }
 }
@@ -58,9 +60,10 @@ std::vector<Node> extract_ip() {
 void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
   zmq::socket_t receiver(context, ZMQ_PULL);
 
-  LOG_SOCKOUT_VOID("connect", [&] {
-    return receiver.connect("tcp://" + nodes[0].ip_addr + ":" +
-                            std::to_string(nodes[0].port));
+  std::string url =
+      "tcp://" + nodes[0].ip_addr + ":" + std::to_string(nodes[0].port);
+  LOG_SOCKOUT_VOID("connect", url, [&](const std::string &url) {
+    return receiver.connect(url);
   });
 
   zmq::pollitem_t items[] = {{static_cast<void *>(receiver), 0, ZMQ_POLLIN, 0}};
@@ -98,7 +101,9 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     sender.set(zmq::sockopt::curve_publickey, server_pub);
     sender.set(zmq::sockopt::curve_secretkey, server_sec);
 
-    sender.bind("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
+    std::string url = "tcp://" + node.ip_addr + ":" + std::to_string(node.port);
+    LOG_SOCKOUT_VOID("bind", url,
+                     [&](const std::string &url) { return sender.bind(url); });
     senders.push_back(std::move(sender));
   }
 

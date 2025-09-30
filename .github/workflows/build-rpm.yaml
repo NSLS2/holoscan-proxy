@@ -1,0 +1,41 @@
+name: Build RPM Package on RHEL9
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+    # This assumes your self-hosted runner is a RHEL 9 machine with required build tools installed
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Prepare rpmbuild directories
+      run: |
+        mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+    - name: Prepare source tarball
+      run: |
+        VERSION=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)
+        echo "Version: $VERSION"
+        tar czf ~/rpmbuild/SOURCES/holoscan-proxy-${VERSION}.tar.gz --exclude='.git' .
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Prepare spec file with version
+      run: |
+        sed "s/^Version:.*$/Version: $VERSION/" packaging/holoscan-proxy.spec > ~/rpmbuild/SPECS/holoscan-proxy.spec
+        sed -i "s|^Source0:.*$|Source0: holoscan-proxy-${VERSION}.tar.gz|" ~/rpmbuild/SPECS/holoscan-proxy.spec
+
+    - name: Build RPM package
+      run: |
+        rpmbuild -ba ~/rpmbuild/SPECS/holoscan-proxy.spec
+
+    - name: Upload RPM artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: holoscan-proxy-rpm
+        path: ~/rpmbuild/RPMS/x86_64/*.rpm

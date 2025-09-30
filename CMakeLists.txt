@@ -5,10 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(CheckCXXSourceCompiles)
-
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}  "-g -std=c++20 -Wall")
-
 find_package(PkgConfig)
 pkg_check_modules(PC_ZeroMQ QUIET zmq)
 

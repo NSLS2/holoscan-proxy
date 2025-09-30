@@ -2,6 +2,7 @@
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
+#include <queue>
 #include <ranges>
 #include <thread>
 #include <yaml-cpp/yaml.h>
@@ -17,7 +18,7 @@ const char *server_sec;
 
 std::mutex buffer_mutex;
 std::condition_variable cv;
-std::queue<zmq::message_t> messages;
+std::queue<zmq::message_t> message_buffer;
 
 // connect(), bind(), set() functions return void or throw exception
 // send(), recv() functions return bool or sometimes throw exception
@@ -82,7 +83,7 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
         std::string recv_msg((char *)msg.data(), msg.size());
         std::cerr << "Received: " << recv_msg << std::endl;
 
-        messages.emplace(
+        message_buffer.emplace(
             std::move(msg)); // zmq::message_t does not have copy constructor?
       }                      // unlock mutex in the end of the scope
       cv.notify_one();
@@ -128,12 +129,13 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   while (true) {
     // lock the mutex and preserve locking until the message buffer is not empty
     std::unique_lock<std::mutex> lock(buffer_mutex);
-    cv.wait(lock, [] { return !messages.empty(); });
+    cv.wait(lock, [] { return !message_buffer.empty(); });
 
     // get the message from the buffer queue and pop the buffer queue
     zmq::message_t msg = std::move(
-        messages.front()); // zmq::message_t does not have copy constructor?
-    messages.pop();
+        message_buffer
+            .front()); // zmq::message_t does not have copy constructor?
+    message_buffer.pop();
     lock.unlock(); // unlock the mutex so that the reader can continue working
 
     // sending message to socket might modify ownership? so just copy it into

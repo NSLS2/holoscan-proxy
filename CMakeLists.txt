@@ -25,10 +25,11 @@ else()
     message("yaml-cpp found!")
 endif()
 
+find_package(Threads REQUIRED)
 
 set(SOURCE_FILES main.cpp)
 add_executable(holoscan-proxy ${SOURCE_FILES})
 
 target_include_directories(holoscan-proxy PUBLIC ${ZeroMQ_INCLUDE_DIR} ${YAML_CPP_INCLUDE_DIR})
-target_link_libraries(holoscan-proxy PRIVATE yaml-cpp ${ZeroMQ_LIBRARY})
+target_link_libraries(holoscan-proxy PRIVATE yaml-cpp ${ZeroMQ_LIBRARY} Threads::Threads)
 #target_link_libraries(holoscan-proxy PRIVATE yaml-cpp::yaml-cpp ${ZeroMQ_LIBRARY})

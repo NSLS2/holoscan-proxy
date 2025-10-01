@@ -20,6 +20,8 @@ BuildRequires:  yaml-cpp-devel
 Requires:       yaml-cpp
 Requires:       libstdc++
 
+%debug_package
+
 %description
 Holoscan Proxy is a C++ application using cppzmq and yaml-cpp for messaging and config.
 

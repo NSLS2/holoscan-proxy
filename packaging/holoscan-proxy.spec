@@ -23,31 +23,50 @@ BuildRequires:  dwz
 Requires:       yaml-cpp
 Requires:       libstdc++
 
-%debug_package
+#%debug_package
 
 %description
 Holoscan Proxy is a C++ application using cppzmq and yaml-cpp for messaging and config.
 
+#%prep
+#%autosetup
+
+#%build
+#mkdir -p build
+#cd build
+#cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=%{_prefix}
+#make
+
+#%install
+#rm -rf %{buildroot}
+#cd build 
+#make install DESTDIR=%{buildroot}
+
+## Debug : check if binary is installed correctly
+#ls -l %{buildroot}/usr/bin/holoscan-proxy || echo "Binary not found in buildroot!"
+
+#%files
+#%{_bindir}/holoscan-proxy
+##/usr/local/bin/holoscan-proxy
+##/usr/bin/holoscan-proxy
+
+#%changelog
+
 %prep
-%autosetup
+%autosetup -n %{name}-%{version}
 
 %build
-mkdir -p build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=%{_prefix}
-make
+# Use EL8 macros so -g and --build-id are injected (RelWithDebInfo keeps symbols)
+%cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=%{_prefix}
+%cmake_build
 
 %install
 rm -rf %{buildroot}
-cd build 
-make install DESTDIR=%{buildroot}
-
-# Debug : check if binary is installed correctly
-ls -l %{buildroot}/usr/bin/holoscan-proxy || echo "Binary not found in buildroot!"
+%cmake_install
 
 %files
+%license LICENSE*
+%doc README* CHANGELOG* docs/*
 %{_bindir}/holoscan-proxy
-#/usr/local/bin/holoscan-proxy
-#/usr/bin/holoscan-proxy
 
 %changelog

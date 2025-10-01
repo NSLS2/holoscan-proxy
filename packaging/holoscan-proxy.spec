@@ -40,7 +40,7 @@ make
 #cp build/holoscan-proxy %{buildroot}/usr/local/bin/
 rm -rf %{buildroot}
 cd build 
-make install DESTDIR=%{builtroot}
+make install DESTDIR=%{buildroot}
 
 %files
 #/usr/local/bin/holoscan-proxy

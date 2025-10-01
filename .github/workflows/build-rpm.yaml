@@ -21,7 +21,8 @@ jobs:
         dnf -y install redhat-rpm-config rpm-build \
           rpmdevtools git tar cmake \
           gcc-toolset-12 make rpmlint which \
-          zeromq-devel yaml-cpp-devel
+          zeromq-devel yaml-cpp-devel \
+          elfutils elfutils-debuginfod elfutils-libelf-devel
 
     - name: Build and install cppzmq from source
       run: |
@@ -59,6 +60,10 @@ jobs:
     - name: Build the RPM with GCC Toolset enabled
       run: |
         su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
+
+    - name: List built RPMS
+      run: |
+        find /home/builder/rpmbuild/RPMS -name "*.rpm" 
 
     - name: Upload RPM as artifact
       uses: actions/upload-artifact@v4

@@ -7,6 +7,9 @@ License:        BSD-3
 URL:            https://github.com/NSLS2/holoscan-proxy.git
 Source0:        holoscan-proxy-%{version}.tar.gz
 
+# Disable debug packages
+# %global debug_package %{nil}
+
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  make
@@ -28,7 +31,7 @@ mkdir -p build
 cd build
 export CC=/opt/rh/gcc-toolset-12/root/usr/bin/gcc
 export CXX=/opt/rh/gcc-toolset-12/root/usr/bin/g++
-cmake .. 
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo 
 make
 
 %install

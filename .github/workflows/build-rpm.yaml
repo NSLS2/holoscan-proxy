@@ -61,6 +61,14 @@ jobs:
       run: |
         su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
 
+    - name: Check debug extractor and tools
+      run: |
+        ls -l /usr/lib/rpm/find-debuginfo.sh
+        which eu-strip
+        which gdb
+        echo "RPM version:"
+        rpm --version
+
     - name: List built RPMS
       run: |
         find /home/builder/rpmbuild/RPMS -name "*.rpm" 

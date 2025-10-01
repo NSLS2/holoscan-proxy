@@ -24,18 +24,15 @@ Requires:       libstdc++
 Holoscan Proxy is a C++ application using cppzmq and yaml-cpp for messaging and config.
 
 %prep
-%setup -q
+%autosetup
 
 %build
 mkdir -p build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=%{_prefix}
 make
 
 %install
-#rm -rf %{buildroot}
-#mkdir -p %{buildroot}/usr/local/bin
-#cp build/holoscan-proxy %{buildroot}/usr/local/bin/
 rm -rf %{buildroot}
 cd build 
 make install DESTDIR=%{buildroot}
@@ -44,7 +41,8 @@ make install DESTDIR=%{buildroot}
 ls -l %{buildroot}/usr/bin/holoscan-proxy || echo "Binary not found in buildroot!"
 
 %files
+%{_bindir}/holoscan-proxy
 #/usr/local/bin/holoscan-proxy
-/usr/bin/holoscan-proxy
+#/usr/bin/holoscan-proxy
 
 %changelog

@@ -56,9 +56,9 @@ jobs:
         mv $ARCHIVE /home/builder/rpmbuild/SOURCES/
         chown -R builder:builder /home/builder/rpmbuild
 
-    - name: Build the RPM
+    - name: Build the RPM with GCC Toolset enabled
       run: |
-        su - builder -c "rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
+        su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
 
     - name: Upload RPM as artifact
       uses: actions/upload-artifact@v4

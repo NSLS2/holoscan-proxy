@@ -10,10 +10,10 @@ Source0:        holoscan-proxy-%{version}.tar.gz
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  make
-BuildRequires:  cppzmq-devel
+#BuildRequires:  cppzmq-devel
 BuildRequires:  yaml-cpp-devel
 
-Requires:       cppzmq
+#Requires:       cppzmq
 Requires:       yaml-cpp
 Requires:       libstdc++
 

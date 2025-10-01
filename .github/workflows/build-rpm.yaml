@@ -18,7 +18,8 @@ jobs:
         dnf -y install epel-release dnf-plugins-core
         dnf config-manager --set-enabled powertools
         dnf makecache
-        dnf -y install rpm-build rpmdevtools git tar cmake \
+        dnf -y install redhat-rpm-config rpm-build \
+          rpmdevtools git tar cmake \
           gcc-toolset-12 make rpmlint which \
           zeromq-devel yaml-cpp-devel
 

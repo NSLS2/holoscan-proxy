@@ -26,6 +26,8 @@ Holoscan Proxy is a C++ application using cppzmq and yaml-cpp for messaging and 
 %build
 mkdir -p build
 cd build
+export CC=/opt/rh/gcc-toolset-12/root/usr/bin/gcc
+export CXX=/opt/rh/gcc-toolset-12/root/usr/bin/g++
 cmake .. 
 make
 

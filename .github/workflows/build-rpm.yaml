@@ -19,7 +19,7 @@ jobs:
         dnf config-manager --set-enabled powertools
         dnf makecache
         dnf -y install rpm-build rpmdevtools git tar cmake \
-          gcc-c++ make rpmlint which \
+          gcc-toolset-12 make rpmlint which \
           zeromq-devel yaml-cpp-devel
 
     - name: Build and install cppzmq from source

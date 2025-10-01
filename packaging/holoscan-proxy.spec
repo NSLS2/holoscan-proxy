@@ -62,7 +62,9 @@ Holoscan Proxy is a C++ application using cppzmq and yaml-cpp for messaging and 
 
 %install
 rm -rf %{buildroot}
-%make_install -C %{_vpath_builddir}
+make -C %{_vpath_builddir} install \
+     DESTDIR=%{buildroot} \
+     INSTALL="%{__install} -p"
 
 %files
 %license LICENSE*

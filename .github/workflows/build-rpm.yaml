@@ -38,7 +38,7 @@ jobs:
       run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-        VERSION=0.0.1
+        VERSION=0.0.0
         ARCHIVE=holoscan-proxy-${VERSION}.tar.gz
         git archive --format=tar.gz --prefix=holoscan-proxy-${VERSION}/ HEAD -o $ARCHIVE
 

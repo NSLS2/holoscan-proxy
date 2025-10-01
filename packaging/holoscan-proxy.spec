@@ -31,7 +31,7 @@ mkdir -p build
 cd build
 export CC=/opt/rh/gcc-toolset-12/root/usr/bin/gcc
 export CXX=/opt/rh/gcc-toolset-12/root/usr/bin/g++
-cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr
 make
 
 %install
@@ -41,6 +41,9 @@ make
 rm -rf %{buildroot}
 cd build 
 make install DESTDIR=%{buildroot}
+
+# Debug : check if binary is installed correctly
+ls -l %{buildroot}/usr/bin/holoscan-proxy || echo "Binary not found in buildroot!"
 
 %files
 #/usr/local/bin/holoscan-proxy

@@ -35,11 +35,15 @@ cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
 make
 
 %install
+#rm -rf %{buildroot}
+#mkdir -p %{buildroot}/usr/local/bin
+#cp build/holoscan-proxy %{buildroot}/usr/local/bin/
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/local/bin
-cp build/holoscan-proxy %{buildroot}/usr/local/bin/
+cd build 
+make install DESTDIR=%{builtroot}
 
 %files
-/usr/local/bin/holoscan-proxy
+#/usr/local/bin/holoscan-proxy
+/usr/bin/holoscan-proxy
 
 %changelog

@@ -6,15 +6,10 @@ on:
       - main
 
 jobs:
-  build-rhel8:
+  build-rpm:
     runs-on: ubuntu-latest
     container:
       image: almalinux:8
-
-  build-rhel9:
-    runs-on: ubuntu-latest
-    container:
-      image: almalinux:9
 
     steps:
     - name: Install build dependencies

@@ -7,9 +7,6 @@ License:        BSD-3
 URL:            https://github.com/NSLS2/holoscan-proxy.git
 Source0:        holoscan-proxy-%{version}.tar.gz
 
-# Disable debug packages
-# %global debug_package %{nil}
-
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  make
@@ -22,8 +19,6 @@ BuildRequires:  dwz
 #Requires:       cppzmq
 Requires:       yaml-cpp
 Requires:       libstdc++
-
-#%debug_package
 
 %description
 Holoscan Proxy is a C++ application using cppzmq and yaml-cpp for messaging and config.

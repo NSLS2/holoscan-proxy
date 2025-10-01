@@ -49,6 +49,7 @@ jobs:
     - name: Determine version from latest Git tag
       id: get_version
       run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
         git fetch --tags
         VERSION=$(git describe --tags --abbrev=0)
         echo "Using version: $VERSION"

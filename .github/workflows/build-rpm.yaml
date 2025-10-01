@@ -1,4 +1,4 @@
-name: Build and Upload RPM (AlmaLinux 8)
+name: Build and Upload RPM (AlmaLinux 9)
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   build-rpm:
     runs-on: ubuntu-latest
     container:
-      image: almalinux:8
+      image: almalinux:9
 
     steps:
     - name: Install build dependencies

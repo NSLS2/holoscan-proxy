@@ -1,4 +1,4 @@
-name: Build and Upload RPM (AlmaLinux 9)
+name: Build and Upload RPM (AlmaLinux 8)
 
 on:
   push:
@@ -36,6 +36,8 @@ jobs:
 
     - name: Create source tarball and copy spec
       run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
         VERSION=0.0.1
         ARCHIVE=holoscan-proxy-${VERSION}.tar.gz
         git archive --format=tar.gz --prefix=holoscan-proxy-${VERSION}/ HEAD -o $ARCHIVE

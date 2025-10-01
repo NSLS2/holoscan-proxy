@@ -22,7 +22,8 @@ jobs:
           rpmdevtools git tar cmake \
           gcc-toolset-12 make rpmlint which \
           zeromq-devel yaml-cpp-devel \
-          elfutils elfutils-debuginfod elfutils-libelf-devel
+          elfutils elfutils-debuginfod elfutils-libelf-devel \
+          debugedit dwz
 
     - name: Build and install cppzmq from source
       run: |

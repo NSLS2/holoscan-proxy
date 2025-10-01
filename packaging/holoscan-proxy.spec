@@ -15,6 +15,9 @@ BuildRequires:  gcc-c++
 BuildRequires:  make
 #BuildRequires:  cppzmq-devel
 BuildRequires:  yaml-cpp-devel
+BuildRequires:  redhat-rpm-config
+BuildRequires:  debugedit
+BuildRequires:  dwz
 
 #Requires:       cppzmq
 Requires:       yaml-cpp

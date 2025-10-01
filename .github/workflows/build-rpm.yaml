@@ -1,58 +1,57 @@
-name: Build RPM Package
+name: Build and Upload RPM (AlmaLinux 9)
 
 on:
   push:
     branches:
-      - main # Trigger on pushes to the main branch
+      - main
 
 jobs:
-  build-rpm:
-    runs-on: ubuntu-latest # Use an Ubuntu runner
+  build-rhel8:
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
+
+  build-rhel9:
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:9
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4 # Get your code
+    - name: Install build dependencies
+      run: |
+        dnf -y groupinstall "Development Tools"
+        dnf -y install rpm-build rpmdevtools git tar cmake \
+          gcc-c++ make rpmlint which \
+          zeromq-devel yaml-cpp-devel
+
+    - name: Add build user and setup RPM env
+      run: |
+        useradd builder || true
+        mkdir -p /home/builder/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+        chown -R builder:builder /home/builder
+        echo '%_topdir /home/builder/rpmbuild' > /home/builder/.rpmmacros
+
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Install RPM build tools
+    - name: Create source tarball and copy spec
       run: |
-        sudo apt-get update
-        sudo apt-get install -y rpm build-essential rpmlint cmake gcc-14 g++-14 make libzmq3-dev libyaml-cpp-dev
-       
-    - name: Prepare RPM build environment
-      run: |
-        mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-        cp packaging/holoscan-proxy.spec ~/rpmbuild/SPECS/ # Copy your spec file
-        # Copy source files to ~/rpmbuild/SOURCES if needed
-        # For example: cp your-source-code.tar.gz ~/rpmbuild/SOURCES/
-
-    - name: Check for .git
-      run: ls -la . | grep .git || echo ".git is missing!"
-
-    - name: Create source tarball from git
-      run: |
-        VERSION=0.0.0
+        VERSION=0.0.1
         ARCHIVE=holoscan-proxy-${VERSION}.tar.gz
-        echo "Creating $ARCHIVE..."
         git archive --format=tar.gz --prefix=holoscan-proxy-${VERSION}/ HEAD -o $ARCHIVE
 
-        if [ ! -f "$ARCHIVE" ]; then
-          echo "❌ Error: Tarball not created."
-          exit 1
-        fi
+        cp packaging/holoscan-proxy.spec /home/builder/rpmbuild/SPECS/
+        mv $ARCHIVE /home/builder/rpmbuild/SOURCES/
+        chown -R builder:builder /home/builder/rpmbuild
 
-        mv $ARCHIVE ~/rpmbuild/SOURCES/
+    - name: Build the RPM
+      run: |
+        su - builder -c "rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
 
-    - name: Check GCC version
-      run: gcc --version
-
-    - name: Build RPM package
-      run: rpmbuild -ba --nodeps ~/rpmbuild/SPECS/holoscan-proxy.spec # Build the RPM
-
-    - name: Upload RPM artifact
+    - name: Upload RPM as artifact
       uses: actions/upload-artifact@v4
       with:
         name: rpm-package
-        path: ~/rpmbuild/RPMS/**/*.rpm # Upload the generated RPMs
-
+        path: /home/builder/rpmbuild/RPMS/**/*.rpm

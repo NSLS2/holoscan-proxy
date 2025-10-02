@@ -53,7 +53,14 @@ std::vector<Node> extract_ip() {
   YAML::Node config = YAML::LoadFile("config.yaml");
   std::vector<Node> nodes;
 
-  for (const auto &node : config["nodes"]) {
+  if (config["sender"].size() > 1) {
+    throw std::runtime_error(
+        "More than one sender has been defined! Erroring out!!");
+  }
+  for (const auto &node : config["sender"]) {
+    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
+  }
+  for (const auto &node : config["receivers"]) {
     nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
   }
 

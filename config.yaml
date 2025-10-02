@@ -1,6 +1,7 @@
-nodes:
+sender:
   - ip: 127.0.0.1
     port: 5555
+receivers:
   - ip: 127.0.0.1
     port: 6001
   - ip: 127.0.0.1

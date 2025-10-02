@@ -156,8 +156,20 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
 }
 
 int main() {
-  server_pub = std::getenv("SERVER_PUBLIC_KEY");
-  server_sec = std::getenv("SERVER_SECRET_KEY");
+  try {
+    server_pub = std::getenv("SERVER_PUBLIC_KEY");
+    server_sec = std::getenv("SERVER_SECRET_KEY");
+    if (!server_pub) {
+      std::cout << "SERVER_PUBLIC_KEY is not set, as expected." << std::endl;
+    }
+    if (!server_sec) {
+      std::cout << "SERVER_SECRET_KEY is not set, as expected." << std::endl;
+    }
+  } catch (const std::runtime_error &e) {
+    std::cerr << "Error while setting environment variables of the server!!!"
+              << e.what() << std::endl;
+    std::terminate();
+  }
 
   std::vector<Node> nodes = extract_ip();
 

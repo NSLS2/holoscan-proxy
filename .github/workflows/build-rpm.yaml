@@ -1,4 +1,4 @@
-name: Build and Upload RPM (AlmaLinux 9)
+name: Build and Upload RPM (AlmaLinux 8 and 9)
 
 on:
   push:
@@ -8,15 +8,18 @@ on:
 jobs:
   build-rpm:
     runs-on: ubuntu-latest
+    strategy: 
+      matrix:
+        os_version: [8, 9]
     container:
-      image: almalinux:9
+      image: almalinux:${{ matrix.os_version }}
 
     steps:
     - name: Install build dependencies
       run: |
         dnf -y groupinstall "Development Tools"
         dnf -y install epel-release dnf-plugins-core
-        dnf config-manager --set-enabled powertools
+        dnf config-manager --set-enabled powertools || dnf config-manager --set-enabled crb
         dnf makecache
         dnf -y install redhat-rpm-config rpm-build \
           rpmdevtools git tar cmake \

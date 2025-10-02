@@ -19,6 +19,8 @@ const char *server_sec;
 std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> message_buffer;
+std::string socketType = "PushPull";
+
 
 // connect(), bind(), set() functions return void or throw exception
 // send(), recv() functions return bool or sometimes throw exception
@@ -52,6 +54,15 @@ bool LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
 std::vector<Node> extract_ip() {
   YAML::Node config = YAML::LoadFile("config.yaml");
   std::vector<Node> nodes;
+
+  try{
+    socketType = config["socket"][0]["type"].as<std::string>();
+    std::cout<<"socket type: "<< socketType <<std::endl;
+  }
+  catch(const std::exception& e){
+    std::cout<< "No socket type is detected in the config.yaml. Rolling back to PushPull socket\n";
+  }
+
 
   if (config["sender"].size() > 1) {
     throw std::runtime_error(

@@ -161,9 +161,11 @@ int main() {
     server_sec = std::getenv("SERVER_SECRET_KEY");
     if (!server_pub) {
       std::cout << "SERVER_PUBLIC_KEY is not set, as expected." << std::endl;
+      std::terminate();
     }
     if (!server_sec) {
       std::cout << "SERVER_SECRET_KEY is not set, as expected." << std::endl;
+      std::terminate();
     }
   } catch (const std::runtime_error &e) {
     std::cerr << "Error while setting environment variables of the server!!!"

@@ -8,6 +8,8 @@
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
 
+#include "error_checker.h"
+
 struct Node {
   std::string ip_addr;
   int port;
@@ -19,50 +21,10 @@ const char *server_sec;
 std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> message_buffer;
-std::string socketType = "PushPull";
-
-
-// connect(), bind(), set() functions return void or throw exception
-// send(), recv() functions return bool or sometimes throw exception
-template <typename Func>
-void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
-                      Func &&func) {
-  try {
-    func(url);
-  } catch (const zmq::error_t &e) {
-    std::cerr << "Error!! Could not perform the " << operation << " with the "
-              << std::any_cast<std::string>(url)
-              << ". Error notes: " << e.what() << " err no: " << e.num()
-              << std::endl;
-  }
-}
-
-template <typename Func>
-bool LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
-  try {
-    bool result = func();
-    if (!result) {
-      std::cerr << "Warning " << operation << "failed\n";
-    }
-    return result;
-  } catch (const zmq::error_t &e) {
-    std::cerr << "Error " << operation << e.what() << " err no: " << e.num()
-              << std::endl;
-  }
-}
 
 std::vector<Node> extract_ip() {
   YAML::Node config = YAML::LoadFile("config.yaml");
   std::vector<Node> nodes;
-
-  try{
-    socketType = config["socket"][0]["type"].as<std::string>();
-    std::cout<<"socket type: "<< socketType <<std::endl;
-  }
-  catch(const std::exception& e){
-    std::cout<< "No socket type is detected in the config.yaml. Rolling back to PushPull socket\n";
-  }
-
 
   if (config["sender"].size() > 1) {
     throw std::runtime_error(

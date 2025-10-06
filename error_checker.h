@@ -22,7 +22,7 @@ template <typename Func>
   try {
     auto result = func();
     if (!result) {
-      std::cerr << "Warning " << operation << "failed for the url "
+      std::cerr << "Warning " << operation << " failed for the url "
                 << std::any_cast<std::string>(url)
                 << " . Check the connection\n";
     }

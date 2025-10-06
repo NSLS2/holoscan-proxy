@@ -5,13 +5,9 @@
 #include <queue>
 #include <ranges>
 #include <thread>
-#include <yaml-cpp/yaml.h>
-#include <zmq.hpp>
 
-struct Node {
-  std::string ip_addr;
-  int port;
-};
+#include "error_checker.h"
+#include "socket.h"
 
 const char *server_pub;
 const char *server_sec;
@@ -19,67 +15,29 @@ const char *server_sec;
 std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> message_buffer;
-std::string socketType = "PushPull";
-
-
-// connect(), bind(), set() functions return void or throw exception
-// send(), recv() functions return bool or sometimes throw exception
-template <typename Func>
-void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
-                      Func &&func) {
-  try {
-    func(url);
-  } catch (const zmq::error_t &e) {
-    std::cerr << "Error!! Could not perform the " << operation << " with the "
-              << std::any_cast<std::string>(url)
-              << ". Error notes: " << e.what() << " err no: " << e.num()
-              << std::endl;
-  }
-}
-
-template <typename Func>
-bool LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
-  try {
-    bool result = func();
-    if (!result) {
-      std::cerr << "Warning " << operation << "failed\n";
-    }
-    return result;
-  } catch (const zmq::error_t &e) {
-    std::cerr << "Error " << operation << e.what() << " err no: " << e.num()
-              << std::endl;
-  }
-}
 
 std::vector<Node> extract_ip() {
   YAML::Node config = YAML::LoadFile("config.yaml");
   std::vector<Node> nodes;
-
-  try{
-    socketType = config["socket"][0]["type"].as<std::string>();
-    std::cout<<"socket type: "<< socketType <<std::endl;
-  }
-  catch(const std::exception& e){
-    std::cout<< "No socket type is detected in the config.yaml. Rolling back to PushPull socket\n";
-  }
-
 
   if (config["sender"].size() > 1) {
     throw std::runtime_error(
         "More than one sender has been defined! Erroring out!!");
   }
   for (const auto &node : config["sender"]) {
-    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
+    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>(),
+                     node["type"].as<zmq::socket_type>()});
   }
   for (const auto &node : config["receivers"]) {
-    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
+    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>(),
+                     node["type"].as<zmq::socket_type>()});
   }
 
   return nodes;
 }
 
 void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
-  zmq::socket_t receiver(context, ZMQ_PULL);
+  zmq::socket_t receiver(context, nodes[0].type);
 
   std::any url = std::string("tcp://" + nodes[0].ip_addr + ":" +
                              std::to_string(nodes[0].port));
@@ -116,8 +74,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   // create sockets to send the message through this proxy
   std::vector<zmq::socket_t> senders;
   for (const auto &node : nodes | std::views::drop(1)) {
-    // zmq::socket_t sender(context, ZMQ_PUSH);
-    zmq::socket_t sender(context, ZMQ_PUSH);
+    zmq::socket_t sender(context, node.type);
     LOG_SOCKOUT_VOID(
         "set", zmq::sockopt::curve_server, [&](const std::any &option) {
           return sender.set(std::any_cast<zmq::sockopt::curve_server_t>(option),

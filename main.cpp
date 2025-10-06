@@ -55,7 +55,7 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
     zmq::poll(items, 1, std::chrono::milliseconds(5000));
     if (items[0].revents & ZMQ_POLLIN) {
       zmq::message_t msg;
-      LOG_SOCKOUT_BOOL("receive", [&]() {
+      LOG_SOCKOUT_BOOL("receive", url, [&]() {
         return receiver.recv(msg, zmq::recv_flags::none);
       });
 
@@ -78,23 +78,30 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
 
 void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   // create sockets to send the message through this proxy
-  std::vector<zmq::socket_t> senders;
+  struct sockets {
+    zmq::socket_t socket;
+    std::string url;
+  };
+
+  std::vector<sockets> senders;
+  // std::vector<zmq::socket_t> senders;
+
   for (const auto &node : nodes | std::views::drop(1)) {
-    zmq::socket_t sender(context, ZMQ_PUSH);
+    zmq::socket_t socket(context, ZMQ_PUSH);
     LOG_SOCKOUT_VOID(
         "set", zmq::sockopt::curve_server, [&](const std::any &option) {
-          return sender.set(std::any_cast<zmq::sockopt::curve_server_t>(option),
+          return socket.set(std::any_cast<zmq::sockopt::curve_server_t>(option),
                             1);
         });
     LOG_SOCKOUT_VOID(
         "set", zmq::sockopt::curve_publickey, [&](const std::any &option) {
-          return sender.set(
+          return socket.set(
               std::any_cast<zmq::sockopt::curve_publickey_t>(option),
               server_pub);
         });
     LOG_SOCKOUT_VOID(
         "set", zmq::sockopt::curve_secretkey, [&](const std::any &option) {
-          return sender.set(
+          return socket.set(
               std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
               server_sec);
         });
@@ -102,9 +109,9 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     std::any url =
         std::string("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
     LOG_SOCKOUT_VOID("bind", url, [&](const std::any &url) {
-      return sender.bind(std::any_cast<std::string>(url));
+      return socket.bind(std::any_cast<std::string>(url));
     });
-    senders.push_back(std::move(sender));
+    senders.push_back({std::move(socket), std::any_cast<std::string>(url)});
   }
 
   while (true) {
@@ -124,8 +131,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     for (auto &sender : senders) {
       zmq::message_t msg_copy;
       msg_copy.copy(msg);
-      LOG_SOCKOUT_BOOL("send", [&]() {
-        return sender.send(msg_copy, zmq::send_flags::dontwait);
+      LOG_SOCKOUT_BOOL("send", sender.url, [&]() {
+        return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
       });
     }
   }

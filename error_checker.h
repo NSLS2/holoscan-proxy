@@ -17,15 +17,20 @@ void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
 }
 
 template <typename Func>
-auto LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
+auto LOG_SOCKOUT_BOOL(const std::string &operation, const std::any &url,
+                      Func &&func) {
   try {
     auto result = func();
     if (!result) {
-      std::cerr << "Warning " << operation << "failed\n";
+      std::cerr << "Warning " << operation << "failed for the url "
+                << std::any_cast<std::string>(url)
+                << " . Check the connection\n";
     }
     return result;
   } catch (const zmq::error_t &e) {
-    std::cerr << "Error " << operation << e.what() << " err no: " << e.num()
+    std::cerr << "Warning!! Could not perform the " << operation << " with the "
+              << std::any_cast<std::string>(url)
+              << ". Error notes: " << e.what() << " err no: " << e.num()
               << std::endl;
   }
 }

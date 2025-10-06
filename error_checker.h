@@ -9,7 +9,7 @@ void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
   try {
     func(url);
   } catch (const zmq::error_t &e) {
-    std::cerr << "Error!! Could not perform the " << operation << " with the "
+    std::cerr << "Warning!! Could not perform the " << operation << " with the "
               << std::any_cast<std::string>(url)
               << ". Error notes: " << e.what() << " err no: " << e.num()
               << std::endl;
@@ -17,9 +17,9 @@ void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
 }
 
 template <typename Func>
-bool LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
+auto LOG_SOCKOUT_BOOL(const std::string &operation, Func &&func) {
   try {
-    bool result = func();
+    auto result = func();
     if (!result) {
       std::cerr << "Warning " << operation << "failed\n";
     }

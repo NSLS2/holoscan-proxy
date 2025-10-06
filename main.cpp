@@ -55,7 +55,9 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
     zmq::poll(items, 1, std::chrono::milliseconds(5000));
     if (items[0].revents & ZMQ_POLLIN) {
       zmq::message_t msg;
-      receiver.recv(msg, zmq::recv_flags::none);
+      LOG_SOCKOUT_BOOL("receive", [&]() {
+        return receiver.recv(msg, zmq::recv_flags::none);
+      });
 
       { // lock the mutex until pushind the new message to the queue
         std::lock_guard<std::mutex> lock(buffer_mutex);
@@ -78,7 +80,6 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   // create sockets to send the message through this proxy
   std::vector<zmq::socket_t> senders;
   for (const auto &node : nodes | std::views::drop(1)) {
-    // zmq::socket_t sender(context, ZMQ_PUSH);
     zmq::socket_t sender(context, ZMQ_PUSH);
     LOG_SOCKOUT_VOID(
         "set", zmq::sockopt::curve_server, [&](const std::any &option) {
@@ -123,7 +124,9 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     for (auto &sender : senders) {
       zmq::message_t msg_copy;
       msg_copy.copy(msg);
-      sender.send(msg_copy, zmq::send_flags::dontwait);
+      LOG_SOCKOUT_BOOL("send", [&]() {
+        return sender.send(msg_copy, zmq::send_flags::dontwait);
+      });
     }
   }
 }

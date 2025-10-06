@@ -17,8 +17,8 @@ void LOG_SOCKOUT_VOID(const std::string &operation, const std::any &url,
 }
 
 template <typename Func>
-auto LOG_SOCKOUT_BOOL(const std::string &operation, const std::any &url,
-                      Func &&func) {
+[[nodiscard]] auto LOG_SOCKOUT_BOOL(const std::string &operation,
+                                    const std::any &url, Func &&func) {
   try {
     auto result = func();
     if (!result) {

@@ -49,30 +49,22 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
     return receiver.connect(std::any_cast<std::string>(url));
   });
 
-  zmq::pollitem_t items[] = {{static_cast<void *>(receiver), 0, ZMQ_POLLIN, 0}};
-
   while (true) {
-    zmq::poll(items, 1, std::chrono::milliseconds(5000));
-    if (items[0].revents & ZMQ_POLLIN) {
-      zmq::message_t msg;
-      LOG_SOCKOUT_BOOL("receive", url, [&]() {
-        return receiver.recv(msg, zmq::recv_flags::none);
-      });
+    zmq::message_t msg;
+    LOG_SOCKOUT_BOOL("receive", url, [&]() {
+      return receiver.recv(msg, zmq::recv_flags::none);
+    });
 
-      { // lock the mutex until pushind the new message to the queue
-        std::lock_guard<std::mutex> lock(buffer_mutex);
+    { // lock the mutex until pushind the new message to the queue
+      std::lock_guard<std::mutex> lock(buffer_mutex);
 
-        std::string recv_msg((char *)msg.data(), msg.size());
-        std::cerr << "Received: " << recv_msg << std::endl;
+      std::string recv_msg((char *)msg.data(), msg.size());
+      std::cerr << "Received: " << recv_msg << std::endl;
 
-        message_buffer.emplace(
-            std::move(msg)); // zmq::message_t does not have copy constructor?
-      }                      // unlock mutex in the end of the scope
-      cv.notify_one();
-
-    } else {
-      std::cerr << "No message in 5 seconds!" << std::endl;
-    }
+      message_buffer.emplace(
+          std::move(msg)); // zmq::message_t does not have copy constructor?
+    }                      // unlock mutex in the end of the scope
+    cv.notify_one();
   }
 }
 

@@ -1,0 +1,17 @@
+[Unit]
+Description=Holoscan Proxy Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/holoscan-proxy
+Restart=on-failure
+RestartSec=2
+User=nobody
+WorkingDirectory=/var/lib/holoscan-proxy
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

@@ -10,13 +10,12 @@ Source0:        holoscan-proxy-%{version}.tar.gz
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  make
-#BuildRequires:  cppzmq-devel
 BuildRequires:  yaml-cpp-devel
 BuildRequires:  redhat-rpm-config
 BuildRequires:  debugedit
 BuildRequires:  dwz
+BuildRequires:  systemd
 
-#Requires:       cppzmq
 Requires:       yaml-cpp
 Requires:       libstdc++
 
@@ -37,12 +36,25 @@ rm -rf %{buildroot}
 cd build 
 make install DESTDIR=%{buildroot}
 
-# Debug : check if binary is installed correctly
+# Install systemd service file
+install -D -m 0644 ../packaging/holoscan-proxy.service \
+  %{buildroot}/usr/lib/systemd/system/holoscan-proxy.service
+
+# Debug: check if binary and service file are installed
 ls -l %{buildroot}/usr/bin/holoscan-proxy || echo "Binary not found in buildroot!"
+ls -l %{buildroot}/usr/lib/systemd/system/holoscan-proxy.service || echo "Service file not found!"
+
+%post
+%systemd_post holoscan-proxy.service
+
+%preun
+%systemd_preun holoscan-proxy.service
+
+%postun
+%systemd_postun_with_restart holoscan-proxy.service
 
 %files
 %{_bindir}/holoscan-proxy
-##/usr/local/bin/holoscan-proxy
-##/usr/bin/holoscan-proxy
+/usr/lib/systemd/system/holoscan-proxy.service
 
 %changelog

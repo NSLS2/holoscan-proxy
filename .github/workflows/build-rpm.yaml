@@ -26,7 +26,7 @@ jobs:
           gcc-toolset-12 make rpmlint which \
           zeromq-devel yaml-cpp-devel \
           elfutils elfutils-debuginfod elfutils-libelf-devel \
-          debugedit dwz
+          debugedit dwz systemd
 
     - name: Build and install cppzmq from source
       run: |

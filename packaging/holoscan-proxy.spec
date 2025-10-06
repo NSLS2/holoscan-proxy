@@ -38,11 +38,13 @@ make install DESTDIR=%{buildroot}
 
 # Install systemd service file
 install -D -m 0644 ../packaging/holoscan-proxy.service \
-  %{buildroot}/usr/lib/systemd/system/holoscan-proxy.service
+  %{buildroot}%{_unitdir}/holoscan-proxy.service
 
-# Debug: check if binary and service file are installed
-ls -l %{buildroot}/usr/bin/holoscan-proxy || echo "Binary not found in buildroot!"
-ls -l %{buildroot}/usr/lib/systemd/system/holoscan-proxy.service || echo "Service file not found!"
+# Optional: Debug output (helpful for troubleshooting)
+echo "Installed binary:"
+ls -l %{buildroot}%{_bindir}/holoscan-proxy || echo "Binary not found!"
+echo "Installed service:"
+ls -l %{buildroot}%{_unitdir}/holoscan-proxy.service || echo "Service not found!"
 
 %post
 %systemd_post holoscan-proxy.service
@@ -55,6 +57,6 @@ ls -l %{buildroot}/usr/lib/systemd/system/holoscan-proxy.service || echo "Servic
 
 %files
 %{_bindir}/holoscan-proxy
-/usr/lib/systemd/system/holoscan-proxy.service
+%{_unitdir}/holoscan-proxy.service
 
 %changelog

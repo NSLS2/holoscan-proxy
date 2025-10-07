@@ -148,7 +148,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
             zmq::pollitem_t items[] = {
                 {static_cast<void *>(sender.socket), 0, ZMQ_POLLOUT, 0}};
 
-            int rc = zmq::poll(items, 1, std::chrono::milliseconds(50));
+            int rc = zmq::poll(items, 1, std::chrono::milliseconds(100));
 
             if (rc > 0 && items[0].revents & ZMQ_POLLOUT) {
               // Socket ready, try sending again

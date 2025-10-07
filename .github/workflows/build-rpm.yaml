@@ -2,9 +2,8 @@ name: Build and Upload RPM (AlmaLinux 8 and 9)
 
 on:
   push:
-    branches:
-      - main
-
+    tags:
+      - 'v*'
 jobs:
   build-rpm:
     runs-on: ubuntu-latest

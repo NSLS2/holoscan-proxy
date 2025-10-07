@@ -100,3 +100,22 @@ jobs:
       with:
         name: rpm-package-${{ matrix.os_version }}
         path: /home/builder/rpmbuild/RPMS/**/*.rpm
+
+  upload-release:
+    needs: build-rpm
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')  # Ensure this only runs on tag pushes
+
+    steps:
+    - name: Download all RPM artifacts from matrix builds
+      uses: actions/download-artifact@v4
+      with:
+        path: downloaded-rpms
+
+    - name: List downloaded RPMs
+      run: find downloaded-rpms -name "*.rpm"
+
+    - name: Upload RPMs to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: downloaded-rpms/**/*.rpm

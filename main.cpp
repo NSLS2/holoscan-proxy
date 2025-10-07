@@ -60,8 +60,9 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
     { // lock the mutex until pushind the new message to the queue
       std::lock_guard<std::mutex> lock(buffer_mutex);
 
-      std::string recv_msg((char *)msg.data(), msg.size());
-      std::cerr << "Received: " << recv_msg << std::endl;
+      // uncomment for debug purposes
+      // std::string recv_msg((char *)msg.data(), msg.size());
+      // std::cerr << "Received: " << recv_msg << std::endl;
 
       message_buffer.emplace(
           std::move(msg)); // zmq::message_t does not have copy constructor?
@@ -127,11 +128,39 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     for (auto &sender : senders) {
       zmq::message_t msg_copy;
       msg_copy.copy(msg);
-      std::string send_copy((char *)msg_copy.data(), msg_copy.size());
-      std::cerr << "Sending: " << send_copy << std::endl;
-      LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
-        return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+      
+      // uncomment for debug purposes
+      // std::string send_copy((char *)msg_copy.data(), msg_copy.size());
+      // std::cerr << "Sending: " << send_copy << std::endl;
+     
+      
+       LOG_SOCKOUT_BOOL("send", sender.url, [&]() -> std::optional<size_t> {
+        // Try non-blocking send first
+        auto result = sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+        if (result.has_value()) {
+          return result;
+        }
+
+        // Not ready, poll for writability
+        zmq::pollitem_t poller[] = {
+            {static_cast<void *>(sender.socket), 0, ZMQ_POLLOUT, 0}
+        };
+
+        constexpr int poll_timeout_ms = 100;
+
+        if (zmq::poll(poller, 1, poll_timeout_ms) > 0 &&
+            (poller[0].revents & ZMQ_POLLOUT)) {
+          // Try sending again
+          return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+        }
+
+        // Failed even after poll
+        //return std::nullopt;
       });
+       
+      //LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
+      //  return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+      //});
     }
   }
 }

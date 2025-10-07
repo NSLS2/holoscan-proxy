@@ -27,15 +27,12 @@ std::vector<Node> extract_ip() {
   YAML::Node config = YAML::LoadFile("config.yaml");
   std::vector<Node> nodes;
 
-  if (config["sender"].size() > 1) {
-    throw std::runtime_error(
-        "More than one sender has been defined! Erroring out!!");
-  }
-  for (const auto &node : config["sender"]) {
-    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
-  }
-  for (const auto &node : config["receivers"]) {
-    nodes.push_back({node["ip"].as<std::string>(), node["port"].as<int>()});
+  YAML::Node sender = config["sender"];
+  nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>()});
+
+  for (const auto &receiver : config["receivers"]) {
+    nodes.push_back(
+        {receiver["ip"].as<std::string>(), receiver["port"].as<int>()});
   }
 
   return nodes;
@@ -54,7 +51,7 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
 
   while (true) {
     zmq::message_t msg;
-    LOG_SOCKOUT_BOOL("receive", url, [&receiver, &msg]() {
+    auto recv = LOG_SOCKOUT_BOOL("receive", url, [&receiver, &msg]() {
       return receiver.recv(msg, zmq::recv_flags::none);
     });
     // receiver.recv(msg, zmq::recv_flags::none);
@@ -135,7 +132,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
       // std::string send_copy((char *)msg_copy.data(), msg_copy.size());
       // std::cerr << "Sending: " << send_copy << std::endl;
 
-      LOG_SOCKOUT_BOOL(
+      auto sent = LOG_SOCKOUT_BOOL(
           "send", sender.url, [&sender, &msg_copy]() -> std::optional<size_t> {
             // Try non-blocking send first
             auto result =

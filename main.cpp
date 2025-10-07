@@ -1,4 +1,5 @@
 #include <any>
+#include <chrono>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -134,28 +135,30 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
       // std::string send_copy((char *)msg_copy.data(), msg_copy.size());
       // std::cerr << "Sending: " << send_copy << std::endl;
 
-      LOG_SOCKOUT_BOOL("send", sender.url, [&]() -> std::optional<size_t> {
-        // Try non-blocking send first
-        auto result = sender.socket.send(msg_copy, zmq::send_flags::dontwait);
-        if (result.has_value()) {
-          return result;
-        }
+      LOG_SOCKOUT_BOOL(
+          "send", sender.url, [&sender, &msg_copy]() -> std::optional<size_t> {
+            // Try non-blocking send first
+            auto result =
+                sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+            if (result.has_value()) {
+              return result;
+            }
 
-        // Not ready, poll for writability
-        zmq::pollitem_t poller[] = {
-            {static_cast<void *>(sender.socket), 0, ZMQ_POLLOUT, 0}};
+            // If send failed (would block), poll to wait for socket readiness
+            zmq::pollitem_t items[] = {
+                {static_cast<void *>(sender.socket), 0, ZMQ_POLLOUT, 0}};
 
-        constexpr int poll_timeout_ms = 100;
+            int rc = zmq::poll(items, 1, std::chrono::milliseconds(50));
 
-        if (zmq::poll(poller, 1, poll_timeout_ms) > 0 &&
-            (poller[0].revents & ZMQ_POLLOUT)) {
-          // Try sending again
-          return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
-        }
+            if (rc > 0 && items[0].revents & ZMQ_POLLOUT) {
+              // Socket ready, try sending again
+              return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+            }
 
-        // Failed even after poll
-        // return std::nullopt;
-      });
+            // Failed even after poll
+            // return std::nullopt;
+            return std::nullopt;
+          });
 
       // LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
       //   return sender.socket.send(msg_copy, zmq::send_flags::dontwait);

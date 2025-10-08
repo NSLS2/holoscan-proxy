@@ -76,21 +76,6 @@ jobs:
         mv $ARCHIVE /home/builder/rpmbuild/SOURCES/
         chown -R builder:builder /home/builder/rpmbuild
 
-    - name: Import GPG private key
-      run: |
-        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-        gpg --list-keys
-
-    - name: Configure RPM
-      run: |
-        echo '%_gpg_name SEHER KARAKUZU <KARAKUZU.SEHER@GMAIL.COM>' >> /home/builder/.rpmmacros
-        chown builder:builder /home/builder/.rpmmacros
-
-
-    - name: Build the RPM with GCC Toolset enabled
-      run: |
-        su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
-
     - name: Import GPG private key as builder
       run: |
         mkdir -p /home/builder/.gnupg
@@ -100,11 +85,28 @@ jobs:
         su - builder -c "gpg --batch --import ~/private.key"
         rm -f /home/builder/private.key
 
+
+    - name: Configure RPM macros for GPG signing
+      run: |
+        echo '%_topdir /home/builder/rpmbuild' > /home/builder/.rpmmacros
+        echo '%_signature gpg' >> /home/builder/.rpmmacros
+        echo '%_gpg_name SEHER KARAKUZU <KARAKUZU.SEHER@GMAIL.COM>' >> /home/builder/.rpmmacros
+        echo '%_gpg_path /home/builder/.gnupg' >> /home/builder/.rpmmacros
+        echo '%__gpg_check_password_cmd /bin/true' >> /home/builder/.rpmmacros
+        chown builder:builder /home/builder/.rpmmacros
+
     - name: Fix GPG permissions
       run: |
         chmod 700 /home/builder/.gnupg
         chown -R builder:builder /home/builder/.gnupg
- 
+    
+    - name: List GPG secret keys for builder
+      run: |
+        su - builder -c "gpg --list-secret-keys"
+
+    - name: Build the RPM with GCC Toolset enabled
+      run: |
+        su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
 
     - name: Sign the RPM packages
       run: |
@@ -118,6 +120,7 @@ jobs:
         which gdb
         echo "RPM version:"
         rpm --version
+
 
     - name: List built RPMs and debug info
       run: |

@@ -93,7 +93,8 @@ jobs:
 
     - name: Sign the RPM packages
       run: |
-        find /home/builder/rpmbuild/RPMS -name '*.rpm' -exec rpm --addsign {} \;
+        su - builder -c 'source /opt/rh/gcc-toolset-12/enable && \
+        find ~/rpmbuild/RPMS -name "*.rpm" -exec rpm --addsign {} \;'
 
     - name: Check debug extractor and tools
       run: |

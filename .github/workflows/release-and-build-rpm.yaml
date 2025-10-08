@@ -77,6 +77,17 @@ jobs:
       run: |
         su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
 
+    - name: Sign the RPM packages
+      run: |
+        for rpmfile in /home/builder/rpmbuild/RPMS/**/*.rpm; do
+          rpm --addsign "$rpmfile"
+        done
+
+    - name: Save public GPG key to file
+      run: |
+        echo "${{ secrets.GPG_PUBLIC_KEY }}" > RPM-GPG-KEY-HOLOSCAN
+      shell: bash
+
     - name: Check debug extractor and tools
       run: |
         ls -l /usr/lib/rpm/find-debuginfo.sh
@@ -120,3 +131,4 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: downloaded-rpms/**/*.rpm
+        RPM-GPG-KEY-HOLOSCAN

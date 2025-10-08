@@ -94,11 +94,17 @@ jobs:
     - name: Import GPG private key as builder
       run: |
         mkdir -p /home/builder/.gnupg
-        chown -R builder:builder /home/builder/.gnupg
         echo "${{ secrets.GPG_PRIVATE_KEY }}" > /home/builder/private.key
-        chown builder:builder /home/builder/private.key
+        chown -R builder:builder /home/builder
+        chmod 600 /home/builder/private.key
         su - builder -c "gpg --batch --import ~/private.key"
         rm -f /home/builder/private.key
+
+    - name: Fix GPG permissions
+      run: |
+        chmod 700 /home/builder/.gnupg
+        chown -R builder:builder /home/builder/.gnupg
+ 
 
     - name: Sign the RPM packages
       run: |

@@ -93,7 +93,7 @@ jobs:
 
     - name: Sign the RPM packages
       run: |
-        find /home/builder/rpmbuild/RPMS --name '*.rpm' -exec rpm --addsign {} \;
+        find /home/builder/rpmbuild/RPMS -name '*.rpm' -exec rpm --addsign {} \;
 
     - name: Save public GPG key to file
       run: |

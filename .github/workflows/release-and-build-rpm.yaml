@@ -15,6 +15,9 @@ jobs:
     container:
       image: almalinux:${{ matrix.os_version }}
 
+    env:
+        GPG_KEY_NAME: "Holoscan Proxy Builder"
+
     steps:
     - name: Install build dependencies
       run: |

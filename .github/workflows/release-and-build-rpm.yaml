@@ -83,7 +83,7 @@ jobs:
 
     - name: Configure RPM
       run: |
-        echo "{{ %_gpg_name SEHER KARAKUZU <KARAKUZU.SEHER@GMAIL.COM> }}" >> /home/builder/.rpmmacros
+        echo '{{ %_gpg_name SEHER KARAKUZU <KARAKUZU.SEHER@GMAIL.COM> }}' >> /home/builder/.rpmmacros
         chown builder:builder /home/builder/.rpmmacros
 
 
@@ -93,9 +93,7 @@ jobs:
 
     - name: Sign the RPM packages
       run: |
-        for rpmfile in /home/builder/rpmbuild/RPMS/**/*.rpm; do
-          rpm --addsign "$rpmfile"
-        done
+        find /home/builder/rpmbuild/RPMS --name '*.rpm' -exec rpm --addsign {} \;
 
     - name: Save public GPG key to file
       run: |

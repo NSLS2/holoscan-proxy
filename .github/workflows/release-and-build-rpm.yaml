@@ -85,6 +85,12 @@ jobs:
         su - builder -c "gpg --batch --import ~/private.key"
         rm -f /home/builder/private.key
 
+    - name: Set GPG key trust
+      run: |
+        KEY_ID=$(su - builder -c "gpg --list-secret-keys --with-colons" | grep '^sec' | head -n1 | cut -d: -f5)
+        echo -e "trust\n5\ny\nsave\n" | su - builder -c "gpg --command-fd 0 --edit-key $KEY_ID"
+      shell: bash
+
 
     - name: Configure RPM macros for GPG signing
       run: |

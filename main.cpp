@@ -1,6 +1,8 @@
+#include "error_checker.h"
 #include <any>
 #include <chrono>
 #include <condition_variable>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <queue>
@@ -8,8 +10,6 @@
 #include <thread>
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
-
-#include "error_checker.h"
 
 struct Node {
   std::string ip_addr;
@@ -23,16 +23,27 @@ std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> message_buffer;
 
-std::vector<Node> extract_ip() {
-  YAML::Node config = YAML::LoadFile("config.yaml");
+std::vector<Node> extract_ip(const std::string &filepath) {
+
+  std::ifstream file(filepath);
+  if (!file) {
+    throw std::runtime_error("Error: File '" + filepath + "' does not exist.");
+  }
+
+  YAML::Node config = YAML::LoadFile(filepath);
   std::vector<Node> nodes;
 
   YAML::Node sender = config["sender"];
   nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>()});
 
+  std::cout << "sender: \n";
+  std::cout << sender << std::endl;
+
+  std::cout << "receivers: \n";
   for (const auto &receiver : config["receivers"]) {
     nodes.push_back(
         {receiver["ip"].as<std::string>(), receiver["port"].as<int>()});
+    std::cout << receiver << std::endl;
   }
 
   return nodes;
@@ -164,7 +175,14 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  if (argc < 2) {
+    throw std::runtime_error("No directory for configuration was provided!!");
+  }
+
+  std::string filepath = argv[1];
+
   try {
     server_pub = std::getenv("SERVER_PUBLIC_KEY");
     server_sec = std::getenv("SERVER_SECRET_KEY");
@@ -182,7 +200,10 @@ int main() {
     std::terminate();
   }
 
-  std::vector<Node> nodes = extract_ip();
+  std::cerr << "**** HOLOSCAN PROXY LAUNCH WELCOME MESSAGE : WAITING FOR "
+               "MESSAGES ****\n";
+
+  std::vector<Node> nodes = extract_ip(filepath);
 
   zmq::context_t context(1); // 1 IO thread
   std::thread th1(receive, std::ref(context), std::cref(nodes));

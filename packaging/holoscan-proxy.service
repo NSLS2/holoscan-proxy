@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 EnvironmentFile=/etc/holoscan-proxy/env_file
-ExecStart=/usr/bin/holoscan-proxy --config /etc/holoscan-proxy/config.yaml
+ExecStart=/usr/bin/holoscan-proxy /etc/holoscan-proxy/config.yml
 Restart=on-failure
 RestartSec=2
 User=nobody

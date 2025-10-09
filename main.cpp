@@ -1,4 +1,3 @@
-#include "error_checker.h"
 #include <any>
 #include <chrono>
 #include <condition_variable>
@@ -7,9 +6,12 @@
 #include <mutex>
 #include <queue>
 #include <ranges>
+#include <string>
 #include <thread>
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
+
+#include "error_checker.h"
 
 struct Node {
   std::string ip_addr;

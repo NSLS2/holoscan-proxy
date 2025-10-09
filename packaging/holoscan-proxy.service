@@ -9,7 +9,6 @@ ExecStart=/usr/bin/holoscan-proxy /etc/holoscan-proxy/config.yml
 Restart=on-failure
 RestartSec=2
 User=nobody
-WorkingDirectory=/var/lib/holoscan-proxy
 StandardOutput=journal
 StandardError=journal
 

@@ -16,6 +16,7 @@
 struct Node {
   std::string ip_addr;
   int port;
+  bool encrypt;
 };
 
 const char *server_pub;
@@ -36,15 +37,17 @@ std::vector<Node> extract_ip(const std::string &filepath) {
   std::vector<Node> nodes;
 
   YAML::Node sender = config["sender"];
-  nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>()});
+  nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>(),
+                   sender["encrypt"].as<bool>()});
 
   std::cout << "sender: \n";
   std::cout << sender << std::endl;
 
   std::cout << "receivers: \n";
   for (const auto &receiver : config["receivers"]) {
-    nodes.push_back(
-        {receiver["ip"].as<std::string>(), receiver["port"].as<int>()});
+    nodes.push_back({receiver["ip"].as<std::string>(),
+                     receiver["port"].as<int>(),
+                     receiver["encrypt"].as<bool>()});
     std::cout << receiver << std::endl;
   }
 
@@ -56,6 +59,27 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
 
   std::any any_url = std::string("tcp://" + nodes[0].ip_addr + ":" +
                                  std::to_string(nodes[0].port));
+  if (nodes[0].encrypt) {
+    LOG_SOCKOUT_VOID(
+        "set", zmq::sockopt::curve_server, [&receiver](const std::any &option) {
+          return receiver.set(
+              std::any_cast<zmq::sockopt::curve_server_t>(option), 1);
+        });
+    LOG_SOCKOUT_VOID(
+        "set", zmq::sockopt::curve_publickey,
+        [&receiver](const std::any &option) {
+          return receiver.set(
+              std::any_cast<zmq::sockopt::curve_publickey_t>(option),
+              server_pub);
+        });
+    LOG_SOCKOUT_VOID(
+        "set", zmq::sockopt::curve_secretkey,
+        [&receiver](const std::any &option) {
+          return receiver.set(
+              std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
+              server_sec);
+        });
+  }
   LOG_SOCKOUT_VOID("connect", any_url, [&receiver](const std::any &any_url) {
     return receiver.connect(std::any_cast<std::string>(any_url));
   });
@@ -93,26 +117,27 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
 
   for (const auto &node : nodes | std::views::drop(1)) {
     zmq::socket_t socket(context, ZMQ_PUSH);
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
-          return socket.set(std::any_cast<zmq::sockopt::curve_server_t>(option),
-                            1);
-        });
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_publickey,
-        [&socket](const std::any &option) {
-          return socket.set(
-              std::any_cast<zmq::sockopt::curve_publickey_t>(option),
-              server_pub);
-        });
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_secretkey,
-        [&socket](const std::any &option) {
-          return socket.set(
-              std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
-              server_sec);
-        });
-
+    if (node.encrypt) {
+      LOG_SOCKOUT_VOID(
+          "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
+            return socket.set(
+                std::any_cast<zmq::sockopt::curve_server_t>(option), 1);
+          });
+      LOG_SOCKOUT_VOID(
+          "set", zmq::sockopt::curve_publickey,
+          [&socket](const std::any &option) {
+            return socket.set(
+                std::any_cast<zmq::sockopt::curve_publickey_t>(option),
+                server_pub);
+          });
+      LOG_SOCKOUT_VOID(
+          "set", zmq::sockopt::curve_secretkey,
+          [&socket](const std::any &option) {
+            return socket.set(
+                std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
+                server_sec);
+          });
+    }
     std::any any_url =
         std::string("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
     LOG_SOCKOUT_VOID("bind", any_url, [&](const std::any &any_url) {
@@ -189,12 +214,12 @@ int main(int argc, char *argv[]) {
     server_pub = std::getenv("SERVER_PUBLIC_KEY");
     server_sec = std::getenv("SERVER_SECRET_KEY");
     if (!server_pub) {
-      std::cout << "SERVER_PUBLIC_KEY is not set, as expected." << std::endl;
-      std::terminate();
+      std::cout << "Warning!!! SERVER_PUBLIC_KEY is not set, as expected."
+                << std::endl;
     }
     if (!server_sec) {
-      std::cout << "SERVER_SECRET_KEY is not set, as expected." << std::endl;
-      std::terminate();
+      std::cout << "Warning!!! SERVER_SECRET_KEY is not set, as expected."
+                << std::endl;
     }
   } catch (const std::runtime_error &e) {
     std::cerr << "Error while setting environment variables of the server!!!"

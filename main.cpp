@@ -124,7 +124,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     senders.push_back({std::move(socket), std::any_cast<std::string>(any_url)});
   }
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   while (true) {
     // lock the mutex and preserve locking until the message buffer is not empty

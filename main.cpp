@@ -25,6 +25,7 @@ const char *server_sec;
 std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> message_buffer;
+// int count=0;
 
 std::vector<Node> extract_ip(const std::string &filepath) {
 
@@ -79,7 +80,9 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
 
       message_buffer.emplace(
           std::move(msg)); // zmq::message_t does not have copy constructor?
-    }                      // unlock mutex in the end of the scope
+      // std::cerr<<"Received  the message number : "<< count <<std::endl;
+      // count +=1;
+    } // unlock mutex in the end of the scope
     cv.notify_one();
   }
 }

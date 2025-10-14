@@ -25,14 +25,15 @@ except:
 adrr = sys.argv[1]
 socket.connect(adrr)
 print(f"listening the {adrr}")
-cnt = 0
 
 start_time = time.perf_counter()
 
-for i in range(0, 100000):
+cnt = 0
+for i in range(0, 10000):
 #while True:
     msg = socket.recv_string()
-    print(f"Received the {cnt}th message with content {msg}")
+    #print(f"Received the {cnt}th message with content {msg}")
+    #print(f"Received the {cnt}th message")
     cnt += 1
 end_time = time.perf_counter()
 

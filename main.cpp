@@ -37,8 +37,7 @@ std::vector<Node> extract_ip(const std::string &filepath) {
   std::vector<Node> nodes;
 
   YAML::Node sender = config["sender"];
-  nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>(),
-                   sender["encrypt"].as<bool>()});
+  nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>()});
 
   std::cout << "sender: \n";
   std::cout << sender << std::endl;
@@ -59,27 +58,6 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
 
   std::any any_url = std::string("tcp://" + nodes[0].ip_addr + ":" +
                                  std::to_string(nodes[0].port));
-  if (nodes[0].encrypt) {
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_server, [&receiver](const std::any &option) {
-          return receiver.set(
-              std::any_cast<zmq::sockopt::curve_server_t>(option), 1);
-        });
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_publickey,
-        [&receiver](const std::any &option) {
-          return receiver.set(
-              std::any_cast<zmq::sockopt::curve_publickey_t>(option),
-              server_pub);
-        });
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_secretkey,
-        [&receiver](const std::any &option) {
-          return receiver.set(
-              std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
-              server_sec);
-        });
-  }
   LOG_SOCKOUT_VOID("connect", any_url, [&receiver](const std::any &any_url) {
     return receiver.connect(std::any_cast<std::string>(any_url));
   });
@@ -146,7 +124,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     senders.push_back({std::move(socket), std::any_cast<std::string>(any_url)});
   }
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   while (true) {
     // lock the mutex and preserve locking until the message buffer is not empty
@@ -170,9 +148,13 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
       // std::string send_copy((char *)msg_copy.data(), msg_copy.size());
       // std::cerr << "Sending: " << send_copy << std::endl;
 
+      /* //This Part is to make sure proxy send the messages but I am not sure
+      if it is needed
+      // Therefore, I am disabling it for now
       auto sent = LOG_SOCKOUT_BOOL(
           "send", sender.url, [&sender, &msg_copy]() -> std::optional<size_t> {
             // Try non-blocking send first
+
             auto result =
                 sender.socket.send(msg_copy, zmq::send_flags::dontwait);
             if (result.has_value()) {
@@ -193,11 +175,13 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
             // Failed even after poll
             // return std::nullopt;
             return std::nullopt;
-          });
 
-      // LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
-      //   return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
-      // });
+          });
+            */
+
+      auto sent = LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
+        return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+      });
     }
   }
 }

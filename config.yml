@@ -1,11 +1,10 @@
 sender:
     ip: 127.0.0.1
     port: 5555
-    encrypt: false
 receivers:
   - ip: 127.0.0.1
     port: 6001
-    encrypt: true
+    encrypt: false
   - ip: 127.0.0.1
     port: 6002
-    encrypt: false
+    encrypt: true

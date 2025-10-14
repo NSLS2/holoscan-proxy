@@ -97,7 +97,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   std::vector<sockets> senders;
 
   for (const auto &node : nodes | std::views::drop(1)) {
-    zmq::socket_t socket(context, ZMQ_PUSH);
+    // zmq::socket_t socket(context, ZMQ_PUSH);
+    zmq::socket_t socket(context, ZMQ_PUB);
     if (node.encrypt) {
       LOG_SOCKOUT_VOID(
           "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {

@@ -11,8 +11,8 @@ except:
     pass
 
 context = zmq.Context()
-#socket = context.socket(zmq.SUB)
-socket = context.socket(zmq.PULL)
+socket = context.socket(zmq.SUB)
+#socket = context.socket(zmq.PULL)
 
 #socket.setsockopt(zmq.CURVE_SERVER, True)
 try:
@@ -21,7 +21,8 @@ try:
     socket.setsockopt(zmq.CURVE_SERVERKEY, server_pub)
 except: 
     pass
-#socket.setsockopt(zmq.SUBSCRIBE, b"")
+socket.setsockopt(zmq.SUBSCRIBE, b"")
+
 adrr = sys.argv[1]
 socket.connect(adrr)
 print(f"listening the {adrr}")

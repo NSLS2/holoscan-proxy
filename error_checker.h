@@ -1,6 +1,11 @@
 #ifndef ERROR_CHECKER_H
 #define ERROR_CHECKER_H
 
+#include <any>
+#include <iostream>
+#include <string>
+#include <zmq.hpp>
+
 // connect(), bind(), set() functions return void or throw exception
 // send(), recv() functions return bool or sometimes throw exception
 template <typename Func>

@@ -1,10 +1,12 @@
 #include <any>
 #include <chrono>
 #include <condition_variable>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <ranges>
+#include <string>
 #include <thread>
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
@@ -14,6 +16,7 @@
 struct Node {
   std::string ip_addr;
   int port;
+  bool encrypt;
 };
 
 const char *server_pub;
@@ -22,17 +25,30 @@ const char *server_sec;
 std::mutex buffer_mutex;
 std::condition_variable cv;
 std::queue<zmq::message_t> message_buffer;
+// int count=0;
 
-std::vector<Node> extract_ip() {
-  YAML::Node config = YAML::LoadFile("config.yaml");
+std::vector<Node> extract_ip(const std::string &filepath) {
+
+  std::ifstream file(filepath);
+  if (!file) {
+    throw std::runtime_error("Error: File '" + filepath + "' does not exist.");
+  }
+
+  YAML::Node config = YAML::LoadFile(filepath);
   std::vector<Node> nodes;
 
   YAML::Node sender = config["sender"];
   nodes.push_back({sender["ip"].as<std::string>(), sender["port"].as<int>()});
 
+  std::cout << "sender: \n";
+  std::cout << sender << std::endl;
+
+  std::cout << "receivers: \n";
   for (const auto &receiver : config["receivers"]) {
-    nodes.push_back(
-        {receiver["ip"].as<std::string>(), receiver["port"].as<int>()});
+    nodes.push_back({receiver["ip"].as<std::string>(),
+                     receiver["port"].as<int>(),
+                     receiver["encrypt"].as<bool>()});
+    std::cout << receiver << std::endl;
   }
 
   return nodes;
@@ -64,7 +80,9 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
 
       message_buffer.emplace(
           std::move(msg)); // zmq::message_t does not have copy constructor?
-    }                      // unlock mutex in the end of the scope
+      // std::cerr<<"Received  the message number : "<< count <<std::endl;
+      // count +=1;
+    } // unlock mutex in the end of the scope
     cv.notify_one();
   }
 }
@@ -79,27 +97,29 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
   std::vector<sockets> senders;
 
   for (const auto &node : nodes | std::views::drop(1)) {
-    zmq::socket_t socket(context, ZMQ_PUSH);
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
-          return socket.set(std::any_cast<zmq::sockopt::curve_server_t>(option),
-                            1);
-        });
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_publickey,
-        [&socket](const std::any &option) {
-          return socket.set(
-              std::any_cast<zmq::sockopt::curve_publickey_t>(option),
-              server_pub);
-        });
-    LOG_SOCKOUT_VOID(
-        "set", zmq::sockopt::curve_secretkey,
-        [&socket](const std::any &option) {
-          return socket.set(
-              std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
-              server_sec);
-        });
-
+    // zmq::socket_t socket(context, ZMQ_PUSH);
+    zmq::socket_t socket(context, ZMQ_PUB);
+    if (node.encrypt) {
+      LOG_SOCKOUT_VOID(
+          "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
+            return socket.set(
+                std::any_cast<zmq::sockopt::curve_server_t>(option), 1);
+          });
+      LOG_SOCKOUT_VOID(
+          "set", zmq::sockopt::curve_publickey,
+          [&socket](const std::any &option) {
+            return socket.set(
+                std::any_cast<zmq::sockopt::curve_publickey_t>(option),
+                server_pub);
+          });
+      LOG_SOCKOUT_VOID(
+          "set", zmq::sockopt::curve_secretkey,
+          [&socket](const std::any &option) {
+            return socket.set(
+                std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
+                server_sec);
+          });
+    }
     std::any any_url =
         std::string("tcp://" + node.ip_addr + ":" + std::to_string(node.port));
     LOG_SOCKOUT_VOID("bind", any_url, [&](const std::any &any_url) {
@@ -108,7 +128,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     senders.push_back({std::move(socket), std::any_cast<std::string>(any_url)});
   }
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   while (true) {
     // lock the mutex and preserve locking until the message buffer is not empty
@@ -132,9 +152,13 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
       // std::string send_copy((char *)msg_copy.data(), msg_copy.size());
       // std::cerr << "Sending: " << send_copy << std::endl;
 
+      /* //This Part is to make sure proxy send the messages but I am not sure
+      if it is needed
+      // Therefore, I am disabling it for now
       auto sent = LOG_SOCKOUT_BOOL(
           "send", sender.url, [&sender, &msg_copy]() -> std::optional<size_t> {
             // Try non-blocking send first
+
             auto result =
                 sender.socket.send(msg_copy, zmq::send_flags::dontwait);
             if (result.has_value()) {
@@ -155,26 +179,35 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
             // Failed even after poll
             // return std::nullopt;
             return std::nullopt;
-          });
 
-      // LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
-      //   return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
-      // });
+          });
+            */
+
+      auto sent = LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
+        return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+      });
     }
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  if (argc < 2) {
+    throw std::runtime_error("No directory for configuration was provided!!");
+  }
+
+  std::string filepath = argv[1];
+
   try {
     server_pub = std::getenv("SERVER_PUBLIC_KEY");
     server_sec = std::getenv("SERVER_SECRET_KEY");
     if (!server_pub) {
-      std::cout << "SERVER_PUBLIC_KEY is not set, as expected." << std::endl;
-      std::terminate();
+      std::cout << "Warning!!! SERVER_PUBLIC_KEY is not set, as expected."
+                << std::endl;
     }
     if (!server_sec) {
-      std::cout << "SERVER_SECRET_KEY is not set, as expected." << std::endl;
-      std::terminate();
+      std::cout << "Warning!!! SERVER_SECRET_KEY is not set, as expected."
+                << std::endl;
     }
   } catch (const std::runtime_error &e) {
     std::cerr << "Error while setting environment variables of the server!!!"
@@ -182,7 +215,10 @@ int main() {
     std::terminate();
   }
 
-  std::vector<Node> nodes = extract_ip();
+  std::cerr << "**** HOLOSCAN PROXY LAUNCH WELCOME MESSAGE : WAITING FOR "
+               "MESSAGES ****\n";
+
+  std::vector<Node> nodes = extract_ip(filepath);
 
   zmq::context_t context(1); // 1 IO thread
   std::thread th1(receive, std::ref(context), std::cref(nodes));

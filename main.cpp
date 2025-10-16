@@ -12,12 +12,8 @@
 #include <zmq.hpp>
 
 #include "error_checker.h"
+#include "socket.h"
 
-struct Node {
-  std::string ip_addr;
-  int port;
-  bool encrypt;
-};
 
 const char *server_pub;
 const char *server_sec;
@@ -47,7 +43,8 @@ std::vector<Node> extract_ip(const std::string &filepath) {
   for (const auto &receiver : config["receivers"]) {
     nodes.push_back({receiver["ip"].as<std::string>(),
                      receiver["port"].as<int>(),
-                     receiver["encrypt"].as<bool>()});
+                     receiver["encrypt"].as<bool>(),
+                     receiver["socket_type"].as<zmq::socket_type>()});
     std::cout << receiver << std::endl;
   }
 
@@ -98,7 +95,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
 
   for (const auto &node : nodes | std::views::drop(1)) {
     // zmq::socket_t socket(context, ZMQ_PUSH);
-    zmq::socket_t socket(context, ZMQ_PUB);
+    zmq::socket_t socket(context, node.socket_type);
     if (node.encrypt) {
       LOG_SOCKOUT_VOID(
           "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {

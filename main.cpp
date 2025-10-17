@@ -14,7 +14,6 @@
 #include "error_checker.h"
 #include "socket.h"
 
-
 const char *server_pub;
 const char *server_sec;
 
@@ -42,8 +41,7 @@ std::vector<Node> extract_ip(const std::string &filepath) {
   std::cout << "receivers: \n";
   for (const auto &receiver : config["receivers"]) {
     nodes.push_back({receiver["ip"].as<std::string>(),
-                     receiver["port"].as<int>(),
-                     receiver["encrypt"].as<bool>(),
+                     receiver["port"].as<int>(), receiver["encrypt"].as<bool>(),
                      receiver["socket_type"].as<zmq::socket_type>()});
     std::cout << receiver << std::endl;
   }

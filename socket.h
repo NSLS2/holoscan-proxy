@@ -2,6 +2,7 @@
 #define SOCKET_H
 
 #include <string>
+#include <unordered_map>
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
 

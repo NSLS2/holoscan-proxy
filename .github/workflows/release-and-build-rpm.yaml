@@ -15,9 +15,6 @@ jobs:
     container:
       image: almalinux:${{ matrix.os_version }}
 
-    env:
-        GPG_KEY_NAME: "Holoscan Proxy Builder"
-
     steps:
     - name: Install build dependencies
       run: |
@@ -30,7 +27,7 @@ jobs:
           gcc-toolset-12 make rpmlint which \
           zeromq-devel yaml-cpp-devel \
           elfutils elfutils-debuginfod elfutils-libelf-devel \
-          debugedit dwz systemd gnupg2
+          debugedit dwz systemd
 
     - name: Build and install cppzmq from source
       run: |
@@ -76,48 +73,9 @@ jobs:
         mv $ARCHIVE /home/builder/rpmbuild/SOURCES/
         chown -R builder:builder /home/builder/rpmbuild
 
-    - name: Import GPG private key as builder
-      run: |
-        mkdir -p /home/builder/.gnupg
-        echo "${{ secrets.GPG_PRIVATE_KEY }}" > /home/builder/private.key
-        chown -R builder:builder /home/builder
-        chmod 600 /home/builder/private.key
-        su - builder -c "gpg --batch --import ~/private.key"
-        rm -f /home/builder/private.key
-
-    - name: Set GPG key trust
-      run: |
-        KEY_ID=$(su - builder -c "gpg --list-secret-keys --with-colons" | grep '^sec' | head -n1 | cut -d: -f5)
-        echo -e "trust\n5\ny\nsave\n" | su - builder -c "gpg --command-fd 0 --edit-key $KEY_ID"
-      shell: bash
-
-
-    - name: Configure RPM macros for GPG signing
-      run: |
-        echo '%_topdir /home/builder/rpmbuild' > /home/builder/.rpmmacros
-        echo '%_signature gpg' >> /home/builder/.rpmmacros
-        echo '%_gpg_name SEHER KARAKUZU <KARAKUZU.SEHER@GMAIL.COM>' >> /home/builder/.rpmmacros
-        echo '%_gpg_path /home/builder/.gnupg' >> /home/builder/.rpmmacros
-        echo '%__gpg_check_password_cmd /bin/true' >> /home/builder/.rpmmacros
-        chown builder:builder /home/builder/.rpmmacros
-
-    - name: Fix GPG permissions
-      run: |
-        chmod 700 /home/builder/.gnupg
-        chown -R builder:builder /home/builder/.gnupg
-    
-    - name: List GPG secret keys for builder
-      run: |
-        su - builder -c "gpg --list-secret-keys"
-
     - name: Build the RPM with GCC Toolset enabled
       run: |
         su - builder -c "source /opt/rh/gcc-toolset-12/enable && rpmbuild -ba /home/builder/rpmbuild/SPECS/holoscan-proxy.spec"
-
-    - name: Sign the RPM packages
-      run: |
-        su - builder -c 'source /opt/rh/gcc-toolset-12/enable && \
-        find ~/rpmbuild/RPMS -name "*.rpm" -exec rpm --addsign {} \;'
 
     - name: Check debug extractor and tools
       run: |
@@ -126,7 +84,6 @@ jobs:
         which gdb
         echo "RPM version:"
         rpm --version
-
 
     - name: List built RPMs and debug info
       run: |
@@ -151,15 +108,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')  # Ensure this only runs on tag pushes
 
     steps:
-    - name: Download all RPM and GPG key from builds
+    - name: Download all RPM artifacts from matrix builds
       uses: actions/download-artifact@v4
       with:
         path: downloaded-rpms
-
-    - name: Save public GPG key to file
-      run: |
-        echo "${{ secrets.GPG_PUBLIC_KEY }}" > RPM-GPG-KEY-HOLOSCAN
-      shell: bash
 
     - name: List downloaded RPMs
       run: find downloaded-rpms -name "*.rpm"
@@ -167,6 +119,4 @@ jobs:
     - name: Upload RPMs to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: |
-          downloaded-rpms/**/*.rpm
-          RPM-GPG-KEY-HOLOSCAN
+        files: downloaded-rpms/**/*.rpm

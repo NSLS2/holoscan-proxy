@@ -70,8 +70,8 @@ void receive(zmq::context_t &context, const std::vector<Node> &nodes) {
       std::lock_guard<std::mutex> lock(buffer_mutex);
 
       // uncomment for debug purposes
-      // std::string recv_msg((char *)msg.data(), msg.size());
-      // std::cerr << "Received: " << recv_msg << std::endl;
+      std::string recv_msg((char *)msg.data(), msg.size());
+      std::cerr << "Received: " << recv_msg << std::endl;
 
       message_buffer.emplace(
           std::move(msg)); // zmq::message_t does not have copy constructor?
@@ -88,6 +88,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     zmq::socket_t socket;
     std::string url;
   };
+
+  std::cerr<<"Started distribuing....\n";
 
   std::vector<sockets> senders;
 
@@ -144,8 +146,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
       msg_copy.copy(msg);
 
       // uncomment for debug purposes
-      // std::string send_copy((char *)msg_copy.data(), msg_copy.size());
-      // std::cerr << "Sending: " << send_copy << std::endl;
+       std::string send_copy((char *)msg_copy.data(), msg_copy.size());
+       std::cerr << "Sending: " << send_copy << std::endl;
 
       /* //This Part is to make sure proxy send the messages but I am not sure
       if it is needed

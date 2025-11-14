@@ -97,8 +97,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     // zmq::socket_t socket(context, ZMQ_PUSH);
     zmq::socket_t socket(context, node.socket_type);
     if (node.encrypt) {
-      std::cerr << "encrypting the receiver with socket type "
-                << std::any_cast<std::string>(node.socket_type) << std::endl;
+      std::cerr << "encrypting the receiver" << std::endl;
       LOG_SOCKOUT_VOID(
           "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
             return socket.set(

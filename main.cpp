@@ -191,7 +191,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
             */
 
       auto sent = LOG_SOCKOUT_BOOL("send", sender.url, [&sender, &msg_copy]() {
-        return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+        //return sender.socket.send(msg_copy, zmq::send_flags::dontwait);
+        return sender.socket.send(msg_copy);
       });
     }
   }

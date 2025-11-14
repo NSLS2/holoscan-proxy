@@ -98,25 +98,34 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     zmq::socket_t socket(context, node.socket_type);
     if (node.encrypt) {
       std::cerr << "encrypting the receiver" << std::endl;
-      LOG_SOCKOUT_VOID(
-          "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
-            return socket.set(
-                std::any_cast<zmq::sockopt::curve_server_t>(option), 1);
-          });
-      LOG_SOCKOUT_VOID(
-          "set", zmq::sockopt::curve_publickey,
-          [&socket](const std::any &option) {
-            return socket.set(
-                std::any_cast<zmq::sockopt::curve_publickey_t>(option),
-                server_pub);
-          });
-      LOG_SOCKOUT_VOID(
-          "set", zmq::sockopt::curve_secretkey,
-          [&socket](const std::any &option) {
-            return socket.set(
-                std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
-                server_sec);
-          });
+      //LOG_SOCKOUT_VOID(
+      //    "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
+      //      return socket.set(
+      //          std::any_cast<zmq::sockopt::curve_server_t>(option), 1);
+      //    });
+
+      socket.set(zmq::sockopt::curve_server, 1);
+
+      //LOG_SOCKOUT_VOID(
+      //    "set", zmq::sockopt::curve_publickey,
+      //    [&socket](const std::any &option) {
+      //      return socket.set(
+      //          std::any_cast<zmq::sockopt::curve_publickey_t>(option),
+      //          server_pub);
+      //    });
+
+      socket.set(zmq::sockopt::curve_publickey, server_pub);
+
+      //LOG_SOCKOUT_VOID(
+      //    "set", zmq::sockopt::curve_secretkey,
+      //    [&socket](const std::any &option) {
+      //      return socket.set(
+      //          std::any_cast<zmq::sockopt::curve_secretkey_t>(option),
+      //          server_sec);
+      //    });
+
+      socket.set(zmq::sockopt::curve_secretkey, server_sec);
+
     }
     std::any any_url =
         std::string("tcp://" + node.ip_addr + ":" + std::to_string(node.port));

@@ -89,7 +89,7 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     std::string url;
   };
 
-  std::cerr<<"Started distribuing....\n";
+  std::cerr << "Started distribuing....\n";
 
   std::vector<sockets> senders;
 
@@ -97,6 +97,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
     // zmq::socket_t socket(context, ZMQ_PUSH);
     zmq::socket_t socket(context, node.socket_type);
     if (node.encrypt) {
+      std::cerr << "encrypting the receiver with socket type "
+                << std::any_cast<std::string>(node.socket_type) << std::endl;
       LOG_SOCKOUT_VOID(
           "set", zmq::sockopt::curve_server, [&socket](const std::any &option) {
             return socket.set(
@@ -146,8 +148,8 @@ void distribute(zmq::context_t &context, const std::vector<Node> &nodes) {
       msg_copy.copy(msg);
 
       // uncomment for debug purposes
-       std::string send_copy((char *)msg_copy.data(), msg_copy.size());
-       std::cerr << "Sending: " << send_copy << std::endl;
+      std::string send_copy((char *)msg_copy.data(), msg_copy.size());
+      std::cerr << "Sending: " << send_copy << std::endl;
 
       /* //This Part is to make sure proxy send the messages but I am not sure
       if it is needed
@@ -211,6 +213,10 @@ int main(int argc, char *argv[]) {
               << e.what() << std::endl;
     std::terminate();
   }
+
+  // below is for debug purposes . delete immediately afterwords
+  std::cerr << "SERVER_PUBLIC_KEY: " << server_pub << std::endl;
+  std::cerr << "SERVER_SECRET_KEY: " << server_sec << std::endl;
 
   std::cerr << "**** HOLOSCAN PROXY LAUNCH WELCOME MESSAGE : WAITING FOR "
                "MESSAGES ****\n";

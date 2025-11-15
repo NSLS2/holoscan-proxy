@@ -223,10 +223,6 @@ int main(int argc, char *argv[]) {
     std::terminate();
   }
 
-  // below is for debug purposes . delete immediately afterwords
-  // std::cerr << "SERVER_PUBLIC_KEY: " << server_pub << std::endl;
-  // std::cerr << "SERVER_SECRET_KEY: " << server_sec << std::endl;
-
   std::cerr << "**** HOLOSCAN PROXY LAUNCH WELCOME MESSAGE : WAITING FOR "
                "MESSAGES ****\n";
 
